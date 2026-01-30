@@ -1,0 +1,49 @@
+{
+  "name": "flowboard",
+  "version": "1.0.0",
+  "description": "Real-time collaborative kanban board with AI assistant and interactive whiteboard",
+  "private": true,
+  "scripts": {
+    "test": "pnpm run test:back && pnpm run test:front",
+    "test:back": "cd src && dotnet test --no-restore --verbosity normal",
+    "test:front": "cd flowboard-web && pnpm test",
+    "test:back:watch": "cd src && dotnet watch test",
+    "test:front:watch": "cd flowboard-web && pnpm test:watch",
+    "test:coverage": "pnpm run test:back:coverage && pnpm run test:front:coverage",
+    "test:back:coverage": "cd src && dotnet test --collect:\"XPlat Code Coverage\" --results-directory ./coverage",
+    "test:front:coverage": "cd flowboard-web && pnpm test:coverage",
+    "test:e2e": "cd flowboard-web && pnpm cypress:run",
+    "dev:back": "cd src/FlowBoard.API && dotnet watch run",
+    "dev:front": "cd flowboard-web && pnpm dev",
+    "build:back": "cd src && dotnet build",
+    "build:front": "cd flowboard-web && pnpm build",
+    "lint:front": "cd flowboard-web && pnpm lint",
+    "format:front": "cd flowboard-web && pnpm format",
+    "type-check": "cd flowboard-web && pnpm type-check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PlonGuo/flowboard.git"
+  },
+  "keywords": [
+    "kanban",
+    "collaboration",
+    "real-time",
+    "signalr",
+    "angular",
+    "dotnet",
+    "ai-assistant",
+    "whiteboard"
+  ],
+  "author": "Jason Guo <jason.ghzr@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/PlonGuo/flowboard/issues"
+  },
+  "homepage": "https://github.com/PlonGuo/flowboard#readme",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.0.0"
+}
