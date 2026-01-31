@@ -1,0 +1,140 @@
+<div class="relative flex min-h-screen w-full flex-col">
+  <!-- Header -->
+  <header class="glass-nav sticky top-0 z-50 px-6 py-4 lg:px-12">
+    <div class="max-w-[1440px] mx-auto flex items-center justify-between gap-8">
+      <div class="flex items-center gap-6">
+        <a routerLink="/" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <div class="size-10 bg-primary flex items-center justify-center rounded-lg shadow-lg shadow-primary/20">
+            <span class="material-symbols-outlined text-white">dashboard_customize</span>
+          </div>
+          <h2 class="text-xl font-extrabold tracking-tight">FlowBoard</h2>
+        </a>
+        <div class="h-6 w-px bg-white/10"></div>
+        <h3 class="text-white/60 font-medium">Profile Settings</h3>
+      </div>
+      <a
+        routerLink="/"
+        class="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+      >
+        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+        <span>Back to Boards</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 w-full max-w-3xl mx-auto px-6 py-10 lg:px-12">
+    <div class="glass-card p-8 rounded-2xl">
+      <h1 class="text-2xl font-bold text-white mb-2">Profile Settings</h1>
+      <p class="text-white/50 mb-8">Update your profile information and avatar</p>
+
+      <!-- Success Message -->
+      @if (success()) {
+        <div class="mb-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-400 text-sm flex items-center gap-2">
+          <span class="material-symbols-outlined text-[20px]">check_circle</span>
+          Profile updated successfully!
+        </div>
+      }
+
+      <!-- Error Message -->
+      @if (error()) {
+        <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+          {{ error() }}
+        </div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-8">
+        <!-- Current Avatar Preview -->
+        <div class="flex items-center gap-6">
+          <div
+            class="size-20 rounded-full bg-cover bg-center bg-primary/20 border-2 border-primary/30"
+            [style.background-image]="'url(' + selectedAvatar() + ')'"
+          ></div>
+          <div>
+            <p class="text-white font-medium">{{ user()?.fullName }}</p>
+            <p class="text-white/50 text-sm">{{ user()?.email }}</p>
+          </div>
+        </div>
+
+        <!-- Full Name -->
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-white/70" for="fullName">Full Name</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/40">person</span>
+            <input
+              id="fullName"
+              type="text"
+              formControlName="fullName"
+              class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              placeholder="Enter your full name"
+            />
+          </div>
+          @if (form.get('fullName')?.touched && form.get('fullName')?.errors?.['required']) {
+            <p class="text-red-400 text-xs">Full name is required</p>
+          }
+        </div>
+
+        <!-- Avatar Selection -->
+        <div class="space-y-4">
+          <label class="text-sm font-medium text-white/70">Choose an Avatar</label>
+          <div class="grid grid-cols-4 sm:grid-cols-8 gap-3">
+            @for (avatar of defaultAvatars(); track avatar) {
+              <button
+                type="button"
+                (click)="selectAvatar(avatar)"
+                class="size-14 rounded-full bg-cover bg-center bg-primary/20 border-2 transition-all hover:scale-105"
+                [class.border-primary]="selectedAvatar() === avatar"
+                [class.border-white/10]="selectedAvatar() !== avatar"
+                [class.ring-2]="selectedAvatar() === avatar"
+                [class.ring-primary/50]="selectedAvatar() === avatar"
+                [style.background-image]="'url(' + avatar + ')'"
+              ></button>
+            }
+          </div>
+        </div>
+
+        <!-- Custom Avatar URL -->
+        <div class="space-y-2">
+          <label class="text-sm font-medium text-white/70" for="customAvatarUrl">
+            Or use a custom image URL
+          </label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/40">link</span>
+            <input
+              id="customAvatarUrl"
+              type="url"
+              formControlName="customAvatarUrl"
+              (blur)="onCustomUrlChange()"
+              class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+              placeholder="https://example.com/your-avatar.png"
+            />
+          </div>
+          <p class="text-white/30 text-xs">Paste a URL to any publicly accessible image</p>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="flex items-center gap-4 pt-4">
+          <button
+            type="submit"
+            [disabled]="loading()"
+            class="flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:hover:scale-100"
+          >
+            @if (loading()) {
+              <span class="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+              <span>Saving...</span>
+            } @else {
+              <span class="material-symbols-outlined text-[20px]">save</span>
+              <span>Save Changes</span>
+            }
+          </button>
+          <a
+            routerLink="/"
+            class="px-6 py-3 text-white/60 hover:text-white transition-colors font-medium"
+          >
+            Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
