@@ -1,43 +1,6 @@
-@import "tailwindcss";
-
-@theme {
-  --color-primary: #6467f2;
-  --color-background-light: #f6f6f8;
-  --color-background-dark: #101122;
-  --color-background-panel: #0a0a14;
-
-  --font-family-display: "Inter", sans-serif;
-
-  --radius-DEFAULT: 1rem;
-  --radius-lg: 2rem;
-  --radius-xl: 3rem;
-  --radius-full: 9999px;
-
-  --animate-slide-in-from-right: slideInFromRight 0.4s ease-out forwards;
-  --animate-slide-in-from-bottom: slideInFromBottom 0.5s ease-out forwards;
-
-  @keyframes slideInFromRight {
-    0% {
-      transform: translateX(100%);
-      opacity: 0.5;
-    }
-    100% {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideInFromBottom {
-    0% {
-      transform: translateY(40px);
-      opacity: 0;
-    }
-    100% {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background-dark: #101122;
