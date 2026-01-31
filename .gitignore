@@ -417,3 +417,12 @@ _site/
 
 # local env
 local.env
+
+# ================================
+# Personal / Study Materials
+# ================================
+
+# Study guides (personal notes, not project docs)
+DOTNET_STUDY_GUIDE.md
+*_STUDY_GUIDE.md
+*_INTERVIEW_PREP.md
