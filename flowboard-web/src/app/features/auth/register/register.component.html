@@ -1,0 +1,114 @@
+<div class="relative flex min-h-screen w-full items-center justify-center px-4">
+  <div class="glass-card w-full max-w-md p-8 rounded-2xl">
+    <!-- Logo -->
+    <div class="flex items-center justify-center gap-3 mb-8">
+      <div class="size-12 bg-primary flex items-center justify-center rounded-xl shadow-lg shadow-primary/20">
+        <span class="material-symbols-outlined text-white text-2xl">dashboard_customize</span>
+      </div>
+      <h1 class="text-2xl font-extrabold tracking-tight">FlowBoard</h1>
+    </div>
+
+    <!-- Title -->
+    <div class="text-center mb-8">
+      <h2 class="text-xl font-bold text-white mb-2">Create your account</h2>
+      <p class="text-white/50">Start collaborating on your boards today</p>
+    </div>
+
+    <!-- Error Message -->
+    @if (error()) {
+      <div class="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">
+        {{ error() }}
+      </div>
+    }
+
+    <!-- Form -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+      <!-- Full Name -->
+      <div class="space-y-2">
+        <label class="text-sm font-medium text-white/70" for="fullName">Full Name</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/40">person</span>
+          <input
+            id="fullName"
+            type="text"
+            formControlName="fullName"
+            class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+            placeholder="Enter your full name"
+          />
+        </div>
+        @if (form.get('fullName')?.touched && form.get('fullName')?.errors?.['required']) {
+          <p class="text-red-400 text-xs">Full name is required</p>
+        }
+      </div>
+
+      <!-- Email -->
+      <div class="space-y-2">
+        <label class="text-sm font-medium text-white/70" for="email">Email</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/40">mail</span>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+            placeholder="Enter your email"
+          />
+        </div>
+        @if (form.get('email')?.touched && form.get('email')?.errors?.['required']) {
+          <p class="text-red-400 text-xs">Email is required</p>
+        }
+        @if (form.get('email')?.touched && form.get('email')?.errors?.['email']) {
+          <p class="text-red-400 text-xs">Please enter a valid email</p>
+        }
+      </div>
+
+      <!-- Password -->
+      <div class="space-y-2">
+        <label class="text-sm font-medium text-white/70" for="password">Password</label>
+        <div class="relative">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/40">lock</span>
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            class="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
+            placeholder="Create a password"
+          />
+        </div>
+        @if (form.get('password')?.touched && form.get('password')?.errors?.['required']) {
+          <p class="text-red-400 text-xs">Password is required</p>
+        }
+        @if (form.get('password')?.touched && form.get('password')?.errors?.['minlength']) {
+          <p class="text-red-400 text-xs">Password must be at least 8 characters</p>
+        }
+        @if (form.get('password')?.touched && form.get('password')?.errors?.['pattern']) {
+          <p class="text-red-400 text-xs">Password must contain uppercase, lowercase, and a number</p>
+        }
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        [disabled]="loading()"
+        class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-white py-3 rounded-xl font-bold transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:hover:scale-100"
+      >
+        @if (loading()) {
+          <span class="material-symbols-outlined animate-spin">progress_activity</span>
+          <span>Creating account...</span>
+        } @else {
+          <span>Create Account</span>
+        }
+      </button>
+    </form>
+
+    <!-- Login Link -->
+    <div class="mt-8 text-center">
+      <p class="text-white/50">
+        Already have an account?
+        <a routerLink="/login" class="text-primary hover:text-primary/80 font-medium transition-colors">
+          Sign in
+        </a>
+      </p>
+    </div>
+  </div>
+</div>

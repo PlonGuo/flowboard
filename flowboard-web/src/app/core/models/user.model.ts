@@ -2,10 +2,10 @@ export interface User {
   id: number;
   email: string;
   fullName: string;
-  avatarUrl: string;
+  avatarUrl: string | null;
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  lastLoginAt: string | null;
 }
 
 export interface UserProfile {
