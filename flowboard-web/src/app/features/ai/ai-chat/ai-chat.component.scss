@@ -1,0 +1,25 @@
+.glass-panel {
+  background: rgba(25, 26, 46, 0.7);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-ai-bubble {
+  background: rgba(100, 103, 242, 0.15);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(100, 103, 242, 0.3);
+}
+
+.glass-user-bubble {
+  background: rgba(59, 130, 246, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.glass-input {
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
