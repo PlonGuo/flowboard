@@ -1,5 +1,7 @@
-using FlowBoard.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
+using FlowBoard.API.Hubs;
+using FlowBoard.API.Middleware;
+using FlowBoard.Application;
+using FlowBoard.Infrastructure;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,9 +20,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 
-// Configure PostgreSQL with EF Core
-builder.Services.AddDbContext<FlowBoardDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Add Application and Infrastructure layers
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
 // Configure SignalR
 builder.Services.AddSignalR();
@@ -73,13 +75,16 @@ app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Global exception handling
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseSerilogRequestLogging();
 
 app.MapControllers();
 
 // Map SignalR Hubs
-// app.MapHub<BoardHub>("/hubs/board");
-// app.MapHub<CanvasHub>("/hubs/canvas");
+app.MapHub<BoardHub>("/hubs/board");
+app.MapHub<CanvasHub>("/hubs/canvas");
 
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }))
