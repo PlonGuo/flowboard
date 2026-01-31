@@ -1,25 +1,29 @@
-import { User } from './user.model';
+import { UserSummaryDto } from './board.model';
 
 export enum TeamRole {
   Owner = 'Owner',
   Member = 'Member',
 }
 
-export interface Team {
+export interface TeamDto {
   id: number;
   name: string;
   description?: string;
-  ownerId: number;
-  owner?: User;
-  createdAt: Date;
-  updatedAt: Date;
+  owner: UserSummaryDto;
+  memberCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface TeamMember {
+export interface TeamMemberDto {
   id: number;
   teamId: number;
-  userId: number;
+  user: UserSummaryDto;
   role: TeamRole;
-  joinedAt: Date;
-  user?: User;
+  joinedAt: string;
+}
+
+export interface CreateTeamRequest {
+  name: string;
+  description?: string;
 }

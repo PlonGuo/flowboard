@@ -48,6 +48,25 @@ export interface TaskDto {
   rowVersion: string;
 }
 
+// API response DTO for tasks within board detail
+export interface TaskApiDto {
+  id: number;
+  title: string;
+  description?: string;
+  position: number;
+  priority: TaskPriority;
+  dueDate?: string;
+  assignee?: {
+    id: number;
+    fullName: string;
+    avatarUrl?: string;
+  };
+  commentsCount: number;
+  attachmentsCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CreateTaskRequest {
   title: string;
   description?: string;

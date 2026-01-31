@@ -28,16 +28,51 @@
       </div>
       <div class="flex items-center gap-4">
         <button
+          (click)="openCreateDialog()"
           class="hidden sm:flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-full font-bold transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]"
         >
           <span class="material-symbols-outlined text-[20px]">add</span>
           <span>Create Board</span>
         </button>
-        <div class="size-10 rounded-full border-2 border-primary/30 p-0.5">
-          <div
-            class="w-full h-full rounded-full bg-cover bg-center"
-            style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCgHxZx_drDNrrOFhsJx6fS93z77oElqFHUsxnau5Wo1t0FhLi8kJvQ3OIRSkg65G_J85XKYajvEa7iM_Qf9iiSgWhS_6HsRBc4UPNbr0UYdO-saDujA9KEtzI6xLQM-X2bSUHqNCn4WjvqDzoGhL4pMwy3tVR06lEXeHm7967lyy6yopkNHicyUweB6j8kUh03SP7DSVw7LsfnCvVz-QE-XjwM61d-BMA0Dn_f6BpRDmhmSZkt71JOC4eQR8PoMF0CTLTSJkisQOOt')"
-          ></div>
+        <!-- Avatar with Dropdown -->
+        <div class="relative">
+          <button
+            (click)="toggleDropdown()"
+            class="size-10 rounded-full border-2 border-primary/30 p-0.5 cursor-pointer hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+          >
+            <div
+              class="w-full h-full rounded-full bg-cover bg-center bg-primary/20"
+              [style.background-image]="'url(' + avatarUrl() + ')'"
+            ></div>
+          </button>
+
+          @if (dropdownOpen()) {
+            <div class="absolute right-0 mt-2 w-64 glass-card rounded-xl shadow-2xl py-2 z-50 border border-white/10">
+              <!-- User Info -->
+              <div class="px-4 py-3 border-b border-white/10">
+                <p class="text-white font-semibold truncate">{{ user()?.fullName }}</p>
+                <p class="text-white/50 text-sm truncate">{{ user()?.email }}</p>
+              </div>
+
+              <!-- Menu Items -->
+              <a
+                routerLink="/settings/profile"
+                class="flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 transition-colors"
+                (click)="closeDropdown()"
+              >
+                <span class="material-symbols-outlined text-[20px]">person</span>
+                <span>Profile Settings</span>
+              </a>
+
+              <button
+                (click)="logout()"
+                class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-white/10 transition-colors"
+              >
+                <span class="material-symbols-outlined text-[20px]">logout</span>
+                <span>Logout</span>
+              </button>
+            </div>
+          }
         </div>
       </div>
     </div>
@@ -70,71 +105,106 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      @for (board of boards(); track board.id) {
-        <div
-          [routerLink]="['/board', board.id]"
-          class="glass-card group relative p-6 rounded-lg transition-all hover:translate-y-[-4px] hover:shadow-2xl hover:shadow-primary/10 hover:border-white/20 cursor-pointer"
-        >
-          <div class="absolute top-4 right-4 text-white/20 group-hover:text-white/60 transition-colors">
-            <span class="material-symbols-outlined">more_horiz</span>
-          </div>
+    <!-- Error Message -->
+    @if (error()) {
+      <div class="mb-6 p-4 bg-red-500/20 border border-red-500/40 rounded-lg text-red-400 flex items-center gap-3">
+        <span class="material-symbols-outlined">error</span>
+        <span>{{ error() }}</span>
+        <button (click)="loadBoards()" class="ml-auto text-sm underline hover:text-red-300">Retry</button>
+      </div>
+    }
+
+    <!-- Loading State -->
+    @if (loading()) {
+      <div class="flex items-center justify-center py-20">
+        <div class="flex flex-col items-center gap-4">
+          <svg class="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p class="text-white/50">Loading your boards...</p>
+        </div>
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        @for (board of boards(); track board.id) {
           <div
-            class="w-full h-32 rounded-lg mb-6 bg-cover bg-center overflow-hidden"
-            [style.background-image]="'url(' + board.imageUrl + ')'"
+            [routerLink]="['/board', board.id]"
+            class="glass-card group relative p-6 rounded-lg transition-all hover:translate-y-[-4px] hover:shadow-2xl hover:shadow-primary/10 hover:border-white/20 cursor-pointer"
           >
-            <div class="w-full h-full bg-gradient-to-t from-black/60 to-transparent"></div>
-          </div>
-          <div class="space-y-4">
-            <div>
-              <h3 class="text-xl font-bold text-white mb-1">{{ board.title }}</h3>
-              <p class="text-white/40 text-sm">Modified {{ board.lastModified }}</p>
+            <!-- Delete button -->
+            <button
+              (click)="confirmDeleteBoard(board, $event)"
+              class="absolute top-4 right-4 text-white/20 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+              title="Delete board"
+            >
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+
+            <!-- Board icon/placeholder -->
+            <div
+              class="w-full h-32 rounded-lg mb-6 bg-gradient-to-br from-primary/30 to-purple-500/20 flex items-center justify-center"
+            >
+              <span class="material-symbols-outlined text-6xl text-white/20">dashboard</span>
             </div>
-            @if (board.members.length > 0) {
-              <div class="flex items-center -space-x-3">
-                @for (member of board.members; track member.avatarUrl) {
-                  <div
-                    class="size-8 rounded-full border-2 border-[#1a1b32] bg-cover bg-center"
-                    [style.background-image]="'url(' + member.avatarUrl + ')'"
-                  ></div>
-                }
-                @if (board.moreMembersCount > 0) {
-                  <div
-                    class="size-8 rounded-full border-2 border-[#1a1b32] bg-white/10 flex items-center justify-center text-[10px] font-bold"
-                  >
-                    +{{ board.moreMembersCount }}
-                  </div>
-                }
+
+            <div class="space-y-4">
+              <div>
+                <h3 class="text-xl font-bold text-white mb-1">{{ board.name }}</h3>
+                <p class="text-white/40 text-sm">Modified {{ formatDate(board.updatedAt) }}</p>
               </div>
-            }
-            <div class="space-y-2 pt-2">
-              <div class="flex justify-between text-xs font-semibold uppercase tracking-wider text-white/60">
-                <span>Progress</span>
-                <span>{{ board.progress }}%</span>
-              </div>
-              <div class="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                <div
-                  class="h-full bg-primary shadow-[0_0_10px_rgba(100,103,242,0.5)]"
-                  [style.width.%]="board.progress"
-                ></div>
+
+              @if (board.description) {
+                <p class="text-white/50 text-sm line-clamp-2">{{ board.description }}</p>
+              }
+
+              <div class="flex items-center gap-4 pt-2 text-sm text-white/50">
+                <div class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[16px]">view_column</span>
+                  <span>{{ board.columnCount }} columns</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[16px]">task_alt</span>
+                  <span>{{ board.taskCount }} tasks</span>
+                </div>
               </div>
             </div>
           </div>
+        }
+
+        <!-- Create New Board Card -->
+        <div
+          (click)="openCreateDialog()"
+          class="border-2 border-dashed border-white/10 group p-6 rounded-lg flex flex-col items-center justify-center text-center hover:border-primary/50 transition-all cursor-pointer min-h-[280px]"
+        >
+          <div
+            class="size-14 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:bg-primary/20 group-hover:text-primary transition-all"
+          >
+            <span class="material-symbols-outlined text-3xl">add</span>
+          </div>
+          <p class="font-bold text-white group-hover:text-primary transition-colors">New Board</p>
+          <p class="text-white/30 text-sm mt-1">Start from a template or scratch</p>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      @if (boards().length === 0 && !loading()) {
+        <div class="text-center py-20">
+          <div class="size-20 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-6">
+            <span class="material-symbols-outlined text-4xl text-white/30">dashboard</span>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2">No boards yet</h3>
+          <p class="text-white/50 mb-6">Create your first board to get started</p>
+          <button
+            (click)="openCreateDialog()"
+            class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-full font-bold transition-all"
+          >
+            <span class="material-symbols-outlined">add</span>
+            Create Your First Board
+          </button>
         </div>
       }
-
-      <div
-        class="border-2 border-dashed border-white/10 group p-6 rounded-lg flex flex-col items-center justify-center text-center hover:border-primary/50 transition-all cursor-pointer"
-      >
-        <div
-          class="size-14 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:bg-primary/20 group-hover:text-primary transition-all"
-        >
-          <span class="material-symbols-outlined text-3xl">add</span>
-        </div>
-        <p class="font-bold text-white group-hover:text-primary transition-colors">New Board</p>
-        <p class="text-white/30 text-sm mt-1">Start from a template or scratch</p>
-      </div>
-    </div>
+    }
   </main>
 
   <footer class="mt-auto px-12 py-8 text-center">
@@ -150,3 +220,43 @@
     </div>
   </footer>
 </div>
+
+<!-- Create Board Dialog -->
+@if (showCreateDialog()) {
+  <app-board-form-dialog
+    (saved)="onBoardCreated()"
+    (cancelled)="closeCreateDialog()"
+  />
+}
+
+<!-- Delete Confirmation Dialog -->
+@if (showDeleteConfirm()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" (click)="cancelDelete()"></div>
+    <div class="glass-card relative w-full max-w-sm p-6 rounded-2xl shadow-2xl bg-gray-900/95 border border-white/10">
+      <h3 class="text-xl font-bold text-white mb-2">Delete Board</h3>
+      <p class="text-white/60 mb-6">
+        Are you sure you want to delete "{{ boardToDelete()?.name }}"? This action cannot be undone.
+      </p>
+      <div class="flex gap-3">
+        <button
+          (click)="cancelDelete()"
+          class="flex-1 px-4 py-2.5 border border-white/20 rounded-lg font-semibold text-white/80 hover:bg-white/10 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="deleteBoard()"
+          [disabled]="isDeleting()"
+          class="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 rounded-lg font-semibold text-white transition-colors disabled:opacity-50"
+        >
+          @if (isDeleting()) {
+            Deleting...
+          } @else {
+            Delete
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

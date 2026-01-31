@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { Subject, takeUntil, switchMap, filter } from 'rxjs';
 import { BoardService } from '../../../core/services/board.service';
-import { Column, Task } from '../../../core/models';
+import { BoardDetailDto, ColumnApiDto } from '../../../core/models/board.model';
+import { TaskApiDto } from '../../../core/models/task.model';
 
 @Component({
   selector: 'app-kanban-board',
@@ -13,41 +13,59 @@ import { Column, Task } from '../../../core/models';
   styleUrl: './kanban-board.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class KanbanBoardComponent {
+export class KanbanBoardComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly boardService = inject(BoardService);
+  private readonly destroy$ = new Subject<void>();
 
-  private readonly boardId = toSignal(this.route.paramMap.pipe(map((params) => params.get('id'))));
+  readonly board = signal<BoardDetailDto | null>(null);
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
+  readonly selectedTask = signal<TaskApiDto | null>(null);
 
-  readonly board = computed(() => {
-    const id = this.boardId();
-    if (id) {
-      return this.boardService.getBoard(id);
-    }
-    return undefined;
-  });
-
-  readonly selectedTask = signal<Task | undefined>(undefined);
-
-  getTasksForColumn(column: Column): Task[] {
-    const currentBoard = this.board();
-    if (!currentBoard) return [];
-    return column.tasks
-      .map((taskId) => this.boardService.getTask(currentBoard, taskId))
-      .filter((t): t is Task => t !== undefined);
+  ngOnInit(): void {
+    this.route.paramMap
+      .pipe(
+        takeUntil(this.destroy$),
+        filter((params) => params.has('id')),
+        switchMap((params) => {
+          const id = params.get('id');
+          this.loading.set(true);
+          this.error.set(null);
+          return this.boardService.getBoard(Number(id));
+        })
+      )
+      .subscribe({
+        next: (board) => {
+          this.board.set(board);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          this.error.set(err.message || 'Failed to load board');
+          this.loading.set(false);
+        },
+      });
   }
 
-  openTaskDetails(task: Task): void {
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  getTasksForColumn(column: ColumnApiDto): TaskApiDto[] {
+    return column.tasks || [];
+  }
+
+  openTaskDetails(task: TaskApiDto): void {
     this.selectedTask.set(task);
   }
 
   closeTaskDetails(): void {
-    this.selectedTask.set(undefined);
+    this.selectedTask.set(null);
   }
 
-  getChecklistProgress(task: Task): number {
-    if (!task.checklist || task.checklist.length === 0) return 0;
-    const completedItems = task.checklist.filter((item) => item.completed).length;
-    return Math.round((completedItems / task.checklist.length) * 100);
+  getColumnColor(index: number): string {
+    const colors = ['white/40', 'primary', 'green-400'];
+    return colors[index % colors.length];
   }
 }

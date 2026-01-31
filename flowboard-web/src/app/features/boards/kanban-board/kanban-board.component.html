@@ -1,4 +1,23 @@
-@if (board(); as currentBoard) {
+@if (loading()) {
+  <div class="flex items-center justify-center h-screen bg-gradient-to-br from-[#1a1a2e] via-[#101122] to-[#2d1b4d]">
+    <div class="flex flex-col items-center gap-4">
+      <svg class="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <p class="text-white/50">Loading board...</p>
+    </div>
+  </div>
+} @else if (error()) {
+  <div class="flex items-center justify-center h-screen bg-gradient-to-br from-[#1a1a2e] via-[#101122] to-[#2d1b4d]">
+    <div class="text-center">
+      <span class="material-symbols-outlined text-6xl text-red-400 mb-4">error</span>
+      <h2 class="text-xl font-bold text-white mb-2">Failed to load board</h2>
+      <p class="text-white/50 mb-4">{{ error() }}</p>
+      <a routerLink="/" class="text-primary hover:underline">Return to Dashboard</a>
+    </div>
+  </div>
+} @else if (board(); as currentBoard) {
   <div
     class="relative flex h-screen w-full bg-gradient-to-br from-[#1a1a2e] via-[#101122] to-[#2d1b4d] overflow-hidden"
   >
@@ -49,24 +68,12 @@
         <div class="flex items-center gap-6">
           <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
             <span class="material-symbols-outlined text-primary">view_kanban</span>
-            {{ currentBoard.title }}
+            {{ currentBoard.name }}
           </h1>
-          <div class="h-6 w-px bg-white/10 mx-2"></div>
-          <div class="flex -space-x-3 items-center">
-            @for (member of currentBoard.members.slice(0, 3); track member.avatarUrl) {
-              <div
-                class="size-9 rounded-full border-2 border-[#1a1a2e] bg-cover bg-center"
-                [style.background-image]="'url(' + member.avatarUrl + ')'"
-              ></div>
-            }
-            @if (currentBoard.moreMembersCount > 0) {
-              <div
-                class="size-9 rounded-full border-2 border-[#1a1a2e] bg-white/10 flex items-center justify-center backdrop-blur-md text-xs font-bold"
-              >
-                +{{ currentBoard.moreMembersCount }}
-              </div>
-            }
-          </div>
+          @if (currentBoard.description) {
+            <div class="h-6 w-px bg-white/10 mx-2"></div>
+            <p class="text-white/50 text-sm max-w-md truncate">{{ currentBoard.description }}</p>
+          }
         </div>
         <div class="flex items-center gap-4">
           <div class="relative w-64">
@@ -83,37 +90,46 @@
           <button class="size-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white transition-all">
             <span class="material-symbols-outlined">notifications</span>
           </button>
-          <div
-            class="size-10 rounded-full bg-cover bg-center border border-white/20"
-            style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCvkyX7UUVEtPHZrSQ-JSz_TxpGqIhjKBBm_gH4jUsVKdOZWvJaIPRyocrW0z6t-MCDEkHj0mc0dOHteHon5RqhB-o4d9Lmxv0zq2BI3qTCID4E-gUXHwZK7AlDLt8o_vPnHs4eFUyD0lTEXv5Gggxm_zhZ7e-L7nvajZG28MVLLKpqQnbxeJ1YV6bif68R9ciLZkSdckAszU_yBcuoD_4oLE-wOV4Z8a6_qPF5WAG4iQTUaDXH44z2XmMHPBsEuOGAc63Nu0Q5T2iW");'
-          ></div>
+          @if (currentBoard.createdBy?.avatarUrl) {
+            <div
+              class="size-10 rounded-full bg-cover bg-center border border-white/20"
+              [style.background-image]="'url(' + currentBoard.createdBy.avatarUrl + ')'"
+            ></div>
+          } @else {
+            <div class="size-10 rounded-full bg-primary/30 flex items-center justify-center border border-white/20">
+              <span class="material-symbols-outlined text-white">person</span>
+            </div>
+          }
         </div>
       </header>
 
       <!-- Main Kanban Content -->
       <main class="flex-1 overflow-x-auto p-10 flex items-start gap-8">
-        @for (column of currentBoard.columns; track column.id) {
+        @for (column of currentBoard.columns; track column.id; let i = $index) {
           <div class="flex flex-col w-[380px] shrink-0 bg-black/20 rounded-xl p-4 min-h-[500px] border border-white/5">
             <div class="flex items-center justify-between mb-6 px-2">
               <div class="flex items-center gap-2">
                 <span
                   class="size-2 rounded-full"
-                  [class.bg-primary]="column.color === 'primary'"
-                  [class.bg-green-400]="column.color === 'green-400'"
-                  [class.bg-white/40]="column.color === 'white/40'"
+                  [class.bg-primary]="getColumnColor(i) === 'primary'"
+                  [class.bg-green-400]="getColumnColor(i) === 'green-400'"
+                  [class.bg-white/40]="getColumnColor(i) === 'white/40'"
                 ></span>
-                <h2 class="text-sm font-bold uppercase tracking-widest text-white/60">{{ column.title }}</h2>
+                <h2 class="text-sm font-bold uppercase tracking-widest text-white/60">{{ column.name }}</h2>
                 <span
                   class="px-2 py-0.5 rounded-full text-[10px]"
-                  [class.bg-primary/20]="column.color === 'primary'"
-                  [class.text-primary]="column.color === 'primary'"
-                  [class.bg-green-400/10]="column.color === 'green-400'"
-                  [class.text-green-400]="column.color === 'green-400'"
-                  [class.bg-white/10]="column.color === 'white/40'"
-                  [class.text-white/70]="column.color === 'white/40'"
+                  [class.bg-primary/20]="getColumnColor(i) === 'primary'"
+                  [class.text-primary]="getColumnColor(i) === 'primary'"
+                  [class.bg-green-400/10]="getColumnColor(i) === 'green-400'"
+                  [class.text-green-400]="getColumnColor(i) === 'green-400'"
+                  [class.bg-white/10]="getColumnColor(i) === 'white/40'"
+                  [class.text-white/70]="getColumnColor(i) === 'white/40'"
                 >
                   {{ getTasksForColumn(column).length }}
                 </span>
+                @if (column.wipLimit) {
+                  <span class="text-white/30 text-xs">/ {{ column.wipLimit }}</span>
+                }
               </div>
               <button class="text-white/40 hover:text-white transition-colors">
                 <span class="material-symbols-outlined">more_horiz</span>
@@ -123,37 +139,16 @@
               @for (task of getTasksForColumn(column); track task.id) {
                 <div
                   (click)="openTaskDetails(task)"
-                  class="glass-card rounded-xl p-5 cursor-pointer"
-                  [class.opacity-60]="task.completed"
-                  [class.grayscale-0.3]="task.completed"
+                  class="glass-card rounded-xl p-5 cursor-pointer hover:border-white/20 transition-all"
                 >
-                  <div class="flex gap-2 mb-3">
-                    @for (tag of task.tags; track tag.name) {
-                      <span
-                        class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter"
-                        [class]="tag.color + ' ' + tag.textColor"
-                      >
-                        {{ tag.name }}
-                      </span>
-                    }
-                  </div>
-                  <h3
-                    class="text-white font-medium mb-4 leading-relaxed"
-                    [class.line-through]="task.completed"
-                    [class.text-white/80]="task.completed"
-                  >
+                  <h3 class="text-white font-medium mb-4 leading-relaxed">
                     {{ task.title }}
                   </h3>
-                  @if (task.progress) {
-                    <div class="w-full bg-white/5 h-1 rounded-full mb-4 overflow-hidden">
-                      <div class="bg-primary h-full" [style.width.%]="task.progress"></div>
-                    </div>
+                  @if (task.description) {
+                    <p class="text-white/50 text-sm mb-4 line-clamp-2">{{ task.description }}</p>
                   }
                   <div class="flex items-center justify-between mt-auto">
                     <div class="flex items-center gap-3 text-white/40">
-                      @if (task.completed) {
-                        <span class="material-symbols-outlined text-green-400">check_circle</span>
-                      }
                       @if (task.commentsCount > 0) {
                         <div class="flex items-center gap-1">
                           <span class="material-symbols-outlined text-sm">chat_bubble</span>
@@ -173,14 +168,20 @@
                         </div>
                       }
                     </div>
-                    <div class="flex -space-x-2">
-                      @for (assignee of task.assignees; track assignee.avatarUrl) {
-                        <div
-                          class="size-6 rounded-full border border-[#1a1a2e] bg-cover"
-                          [style.background-image]="'url(' + assignee.avatarUrl + ')'"
-                        ></div>
-                      }
-                    </div>
+                    @if (task.assignee) {
+                      <div class="flex -space-x-2">
+                        @if (task.assignee.avatarUrl) {
+                          <div
+                            class="size-6 rounded-full border border-[#1a1a2e] bg-cover"
+                            [style.background-image]="'url(' + task.assignee.avatarUrl + ')'"
+                          ></div>
+                        } @else {
+                          <div class="size-6 rounded-full border border-[#1a1a2e] bg-primary/30 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-white text-xs">person</span>
+                          </div>
+                        }
+                      </div>
+                    }
                   </div>
                 </div>
               }
@@ -190,6 +191,16 @@
                 <span class="material-symbols-outlined">add</span>
                 <span class="text-sm font-medium">Add task</span>
               </button>
+            </div>
+          </div>
+        }
+
+        @if (currentBoard.columns.length === 0) {
+          <div class="flex-1 flex items-center justify-center">
+            <div class="text-center">
+              <span class="material-symbols-outlined text-6xl text-white/20 mb-4">view_column</span>
+              <h3 class="text-xl font-bold text-white mb-2">No columns yet</h3>
+              <p class="text-white/50">This board doesn't have any columns yet.</p>
             </div>
           </div>
         }
@@ -209,9 +220,9 @@
       <div class="flex flex-col gap-1">
         <div class="flex items-center gap-3">
           <span class="px-3 py-1 bg-primary/20 text-primary text-xs font-bold rounded-full uppercase tracking-wider border border-primary/30">
-            In Progress
+            {{ task.priority }}
           </span>
-          <span class="text-white/40 text-sm">DEV-402</span>
+          <span class="text-white/40 text-sm">TASK-{{ task.id }}</span>
         </div>
         <h1 class="text-2xl font-bold text-white mt-1">{{ task.title }}</h1>
       </div>
@@ -229,44 +240,29 @@
           <span class="material-symbols-outlined text-white/60">description</span>Description
         </h2>
         <div class="bg-white/5 border border-white/10 rounded-2xl p-6 text-white/80 leading-relaxed mt-4">
-          {{ task.description }}
+          {{ task.description || 'No description provided.' }}
         </div>
       </section>
-      <section>
-        <h2 class="text-lg font-bold flex items-center gap-2">
-          <span class="material-symbols-outlined text-white/60">checklist</span>Checklist
-        </h2>
-        <div class="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 mt-4">
-          <div class="flex flex-col gap-2">
-            <div class="flex justify-between text-sm mb-1">
-              <span class="text-white/60">Completion</span>
-              <span class="text-white font-bold">{{ getChecklistProgress(task) }}%</span>
-            </div>
-            <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-              <div class="h-full bg-primary rounded-full" [style.width.%]="getChecklistProgress(task)"></div>
-            </div>
-          </div>
-          <div class="space-y-3 pt-2">
-            @for (item of task.checklist; track item.item) {
-              <div class="flex items-center gap-3 group">
-                <button
-                  class="size-6 rounded-full border-2 flex items-center justify-center"
-                  [class.border-primary]="item.completed"
-                  [class.bg-primary]="item.completed"
-                  [class.border-white/20]="!item.completed"
-                >
-                  @if (item.completed) {
-                    <span class="material-symbols-outlined text-white text-xs">check</span>
-                  }
-                </button>
-                <span class="text-sm" [class.text-white/50]="item.completed" [class.line-through]="item.completed">
-                  {{ item.item }}
-                </span>
+      @if (task.assignee) {
+        <section>
+          <h2 class="text-lg font-bold flex items-center gap-2">
+            <span class="material-symbols-outlined text-white/60">person</span>Assignee
+          </h2>
+          <div class="bg-white/5 border border-white/10 rounded-2xl p-4 mt-4 flex items-center gap-3">
+            @if (task.assignee.avatarUrl) {
+              <div
+                class="size-10 rounded-full bg-cover bg-center"
+                [style.background-image]="'url(' + task.assignee.avatarUrl + ')'"
+              ></div>
+            } @else {
+              <div class="size-10 rounded-full bg-primary/30 flex items-center justify-center">
+                <span class="material-symbols-outlined text-white">person</span>
               </div>
             }
+            <span class="text-white">{{ task.assignee.fullName }}</span>
           </div>
-        </div>
-      </section>
+        </section>
+      }
     </div>
     <footer class="p-6 border-t border-white/10 bg-black/20">
       <div class="flex items-center gap-3 bg-black/30 border border-white/10 rounded-full p-1.5 pl-5">
