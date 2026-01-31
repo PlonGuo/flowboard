@@ -1,0 +1,127 @@
+
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { BoardService } from '../../services/board.service';
+import { RouterModule } from '@angular/router';
+
+@Component({
+  selector: 'app-dashboard',
+  template: `
+<div class="relative flex min-h-screen w-full flex-col">
+  <header class="glass-nav sticky top-0 z-50 px-6 py-4 lg:px-12">
+    <div class="max-w-[1440px] mx-auto flex items-center justify-between gap-8">
+      <div class="flex items-center gap-10">
+        <div class="flex items-center gap-3">
+          <div class="size-10 bg-primary flex items-center justify-center rounded-lg shadow-lg shadow-primary/20">
+            <span class="material-symbols-outlined text-white">dashboard_customize</span>
+          </div>
+          <h2 class="text-xl font-extrabold tracking-tight">FlowBoard</h2>
+        </div>
+        <nav class="hidden lg:flex items-center gap-8">
+          <a class="text-white font-medium hover:text-primary transition-colors" href="#">My Boards</a>
+          <a class="text-white/60 font-medium hover:text-white transition-colors" href="#">Shared</a>
+          <a class="text-white/60 font-medium hover:text-white transition-colors" href="#">Templates</a>
+        </nav>
+      </div>
+      <div class="flex-1 max-w-xl hidden md:block">
+        <label class="relative flex items-center w-full">
+          <span class="material-symbols-outlined absolute left-4 text-white/40">search</span>
+          <input class="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-12 pr-4 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all backdrop-blur-md" placeholder="Search boards, tasks, or members..." type="text"/>
+        </label>
+      </div>
+      <div class="flex items-center gap-4">
+        <button class="hidden sm:flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-full font-bold transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98]">
+          <span class="material-symbols-outlined text-[20px]">add</span>
+          <span>Create Board</span>
+        </button>
+        <div class="size-10 rounded-full border-2 border-primary/30 p-0.5">
+          <div class="w-full h-full rounded-full bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCgHxZx_drDNrrOFhsJx6fS93z77oElqFHUsxnau5Wo1t0FhLi8kJvQ3OIRSkg65G_J85XKYajvEa7iM_Qf9iiSgWhS_6HsRBc4UPNbr0UYdO-saDujA9KEtzI6xLQM-X2bSUHqNCn4WjvqDzoGhL4pMwy3tVR06lEXeHm7967lyy6yopkNHicyUweB6j8kUh03SP7DSVw7LsfnCvVz-QE-XjwM61d-BMA0Dn_f6BpRDmhmSZkt71JOC4eQR8PoMF0CTLTSJkisQOOt')"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-[1440px] mx-auto px-6 py-10 lg:px-12">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <div class="space-y-2">
+        <p class="text-primary font-semibold tracking-wider uppercase text-xs">Workspace Overview</p>
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight text-white">Your Boards</h1>
+        <p class="text-white/50 text-lg max-w-md">Manage and track your collaborative kanban projects with real-time updates.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button class="glass-card flex items-center justify-center p-3 rounded-xl hover:bg-white/10 transition-colors">
+          <span class="material-symbols-outlined">grid_view</span>
+        </button>
+        <button class="glass-card flex items-center justify-center p-3 rounded-xl hover:bg-white/10 transition-colors text-white/40">
+          <span class="material-symbols-outlined">format_list_bulleted</span>
+        </button>
+        <div class="h-8 w-px bg-white/10 mx-2"></div>
+        <button class="glass-card px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-white/10 transition-colors">Recently Modified</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      @for (board of boards(); track board.id) {
+        <div [routerLink]="['/board', board.id]" class="glass-card group relative p-6 rounded-lg transition-all hover:translate-y-[-4px] hover:shadow-2xl hover:shadow-primary/10 hover:border-white/20 cursor-pointer">
+          <div class="absolute top-4 right-4 text-white/20 group-hover:text-white/60 transition-colors">
+            <span class="material-symbols-outlined">more_horiz</span>
+          </div>
+          <div class="w-full h-32 rounded-lg mb-6 bg-cover bg-center overflow-hidden" [style.background-image]="'url(' + board.imageUrl + ')'">
+            <div class="w-full h-full bg-gradient-to-t from-black/60 to-transparent"></div>
+          </div>
+          <div class="space-y-4">
+            <div>
+              <h3 class="text-xl font-bold text-white mb-1">{{ board.title }}</h3>
+              <p class="text-white/40 text-sm">Modified {{ board.lastModified }}</p>
+            </div>
+            @if (board.members.length > 0) {
+              <div class="flex items-center -space-x-3">
+                @for (member of board.members; track member.avatarUrl) {
+                  <div class="size-8 rounded-full border-2 border-[#1a1b32] bg-cover bg-center" [style.background-image]="'url(' + member.avatarUrl + ')'"></div>
+                }
+                @if (board.moreMembersCount > 0) {
+                  <div class="size-8 rounded-full border-2 border-[#1a1b32] bg-white/10 flex items-center justify-center text-[10px] font-bold">+{{ board.moreMembersCount }}</div>
+                }
+              </div>
+            }
+            <div class="space-y-2 pt-2">
+              <div class="flex justify-between text-xs font-semibold uppercase tracking-wider text-white/60">
+                <span>Progress</span>
+                <span>{{ board.progress }}%</span>
+              </div>
+              <div class="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-primary shadow-[0_0_10px_rgba(100,103,242,0.5)]" [style.width.%]="board.progress"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <div class="border-2 border-dashed border-white/10 group p-6 rounded-lg flex flex-col items-center justify-center text-center hover:border-primary/50 transition-all cursor-pointer">
+        <div class="size-14 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:bg-primary/20 group-hover:text-primary transition-all">
+          <span class="material-symbols-outlined text-3xl">add</span>
+        </div>
+        <p class="font-bold text-white group-hover:text-primary transition-colors">New Board</p>
+        <p class="text-white/30 text-sm mt-1">Start from a template or scratch</p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="mt-auto px-12 py-8 text-center">
+    <div class="max-w-[1440px] mx-auto border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <p class="text-white/30 text-sm">© 2024 FlowBoard. Elevate your collaborative workflow.</p>
+      <div class="flex items-center gap-8 text-sm text-white/40">
+        <a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+        <a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+        <a class="hover:text-primary transition-colors" href="#">Support Center</a>
+      </div>
+    </div>
+  </footer>
+</div>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterModule]
+})
+export class DashboardComponent {
+  boardService = inject(BoardService);
+  boards = this.boardService.getBoards();
+}

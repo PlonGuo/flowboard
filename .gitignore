@@ -414,3 +414,6 @@ TestResults/
 _site/
 .jekyll-cache/
 .jekyll-metadata
+
+# local env
+local.env
