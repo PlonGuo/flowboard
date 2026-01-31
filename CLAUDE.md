@@ -9,6 +9,7 @@
 FlowBoard is a real-time collaborative kanban board with AI assistant and interactive whiteboard, built with **.NET 8** backend and **Angular 17** frontend.
 
 **Key Technologies:**
+
 - Backend: ASP.NET Core, SignalR, EF Core, SQL Server
 - Frontend: Angular 17, TypeScript, RxJS, Angular Material
 - Testing: xUnit (backend), Jest/Jasmine (frontend), Cypress (E2E)
@@ -18,6 +19,7 @@ FlowBoard is a real-time collaborative kanban board with AI assistant and intera
 ## 📚 Core Documentation
 
 **ALWAYS read these files before making changes:**
+
 1. `docs/DESIGN.md` - Complete technical design and architecture
 2. `docs/API_SPEC.md` - API endpoints, request/response formats, error codes
 3. `docs/TESTING.md` - Testing standards and examples
@@ -30,13 +32,15 @@ FlowBoard is a real-time collaborative kanban board with AI assistant and intera
 ### 1. TypeScript Type Safety ⚠️ MANDATORY
 
 **❌ NEVER use `any` type:**
+
 ```typescript
 // DON'T DO THIS
 const data: any = response.data;
-function handleEvent(event: any) { }
+function handleEvent(event: any) {}
 ```
 
 **✅ ALWAYS use proper types:**
+
 ```typescript
 // DO THIS
 interface ApiResponse<T> {
@@ -52,11 +56,13 @@ function handleEvent(event: TaskMovedEvent): void {
 ```
 
 **Type Definition Locations:**
+
 - `flowboard-web/src/app/core/models/` - Core domain models
 - `flowboard-web/src/app/core/interfaces/` - Service interfaces
 - Each feature module has its own types
 
 **Always:**
+
 - Define interfaces for all data structures
 - Use strict typing for function parameters and return types
 - Enable `strict: true` in `tsconfig.json`
@@ -69,31 +75,75 @@ function handleEvent(event: TaskMovedEvent): void {
 **Every new feature MUST include tests:**
 
 **Backend (C#):**
+
 - Unit tests for all handlers, validators, and domain logic
 - Integration tests for API endpoints
 - Minimum 80% code coverage
 
 **Frontend (TypeScript):**
+
 - Unit tests for all components, services, and pipes
 - Test both logic and rendering
 - Minimum 80% code coverage
 
 **Test file naming:**
+
 - Backend: `{ClassName}Tests.cs` (e.g., `MoveTaskHandlerTests.cs`)
 - Frontend: `{component-name}.component.spec.ts`
 
 **Run tests before committing:**
+
 ```bash
 pnpm test          # Run all tests
 pnpm test:back     # Backend only
 pnpm test:front    # Frontend only
 ```
 
+**Playwright MCP UI Testing ⚠️ MANDATORY:**
+
+After completing any frontend UI component or function, **automatically test it using Playwright MCP**:
+
+1. Navigate to the relevant page using `browser_navigate`
+2. Take a snapshot using `browser_snapshot` to verify the UI structure
+3. Test user interactions (clicks, form fills, etc.) using appropriate Playwright tools
+4. Verify expected behavior and state changes
+
+**Example workflow after implementing a login form:**
+
+```
+1. browser_navigate → http://localhost:4200/#/login
+2. browser_snapshot → verify form elements exist
+3. browser_type → fill email field
+4. browser_type → fill password field
+5. browser_click → submit button
+6. browser_snapshot → verify redirect or error state
+```
+
+**Available Playwright MCP tools:**
+
+- `browser_navigate` - Navigate to a URL
+- `browser_snapshot` - Capture accessibility snapshot (preferred over screenshot)
+- `browser_click` - Click elements
+- `browser_type` - Type text into inputs
+- `browser_fill_form` - Fill multiple form fields at once
+- `browser_take_screenshot` - Take visual screenshot
+- `browser_console_messages` - Check for console errors
+- `browser_wait_for` - Wait for text/elements to appear
+
+**Always verify:**
+
+- UI renders correctly
+- Form validation works
+- User interactions trigger expected behavior
+- No console errors after interactions
+- Navigation/routing works as expected
+
 ---
 
 ### 3. Code Organization
 
 **Backend Structure:**
+
 ```
 src/
 ├── FlowBoard.API/           # Controllers, Hubs, Middleware
@@ -103,6 +153,7 @@ src/
 ```
 
 **Frontend Structure:**
+
 ```
 flowboard-web/src/app/
 ├── core/        # Singletons (services, guards, interceptors)
@@ -120,6 +171,7 @@ flowboard-web/src/app/
 #### 1. Follow Clean Architecture Principles
 
 **Entities (Core):**
+
 ```csharp
 // FlowBoard.Core/Entities/Task.cs
 public class Task
@@ -129,13 +181,13 @@ public class Task
     public int ColumnId { get; set; }
     public int Position { get; set; }
     public TaskPriority Priority { get; set; }
-    
+
     [Timestamp]
     public byte[] RowVersion { get; set; } = null!;
-    
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-    
+
     // Navigation properties
     public Column Column { get; set; } = null!;
     public User? Assignee { get; set; }
@@ -146,6 +198,7 @@ public class Task
 #### 2. Use CQRS with MediatR
 
 **Commands:**
+
 ```csharp
 // FlowBoard.Application/Commands/MoveTaskCommand.cs
 public record MoveTaskCommand(
@@ -160,7 +213,7 @@ public class MoveTaskHandler : IRequestHandler<MoveTaskCommand, Result<TaskDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IPublisher _publisher;
-    
+
     public async Task<Result<TaskDto>> Handle(
         MoveTaskCommand request,
         CancellationToken cancellationToken)
@@ -181,7 +234,7 @@ public class CreateTaskCommandValidator : AbstractValidator<CreateTaskCommand>
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Title is required")
             .MaximumLength(200).WithMessage("Title must not exceed 200 characters");
-            
+
         RuleFor(x => x.ColumnId)
             .GreaterThan(0).WithMessage("ColumnId must be greater than 0");
     }
@@ -191,6 +244,7 @@ public class CreateTaskCommandValidator : AbstractValidator<CreateTaskCommand>
 #### 4. API Controllers
 
 **Always:**
+
 - Use `[ApiController]` attribute
 - Return `IActionResult` or `ActionResult<T>`
 - Include proper HTTP status codes
@@ -204,7 +258,7 @@ public class CreateTaskCommandValidator : AbstractValidator<CreateTaskCommand>
 public class TasksController : ControllerBase
 {
     private readonly IMediator _mediator;
-    
+
     [HttpPost]
     [ProducesResponseType(typeof(TaskDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
@@ -212,10 +266,10 @@ public class TasksController : ControllerBase
         [FromBody] CreateTaskCommand command)
     {
         var result = await _mediator.Send(command);
-        
+
         if (!result.IsSuccess)
             return BadRequest(new ErrorResponse { Error = result.Error });
-            
+
         return CreatedAtAction(
             nameof(GetTask),
             new { id = result.Value.Id },
@@ -228,6 +282,7 @@ public class TasksController : ControllerBase
 #### 5. Error Handling
 
 **Use Result pattern:**
+
 ```csharp
 // FlowBoard.Shared/Results/Result.cs
 public class Result<T>
@@ -235,7 +290,7 @@ public class Result<T>
     public bool IsSuccess { get; }
     public T? Value { get; }
     public string? Error { get; }
-    
+
     public static Result<T> Success(T value) => new(true, value, null);
     public static Result<T> Failure(string error) => new(false, default, error);
 }
@@ -248,9 +303,16 @@ public class Result<T>
 #### 1. Component Structure
 
 **Use standalone components (Angular 17+):**
+
 ```typescript
 // task-card.component.ts
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { Task, TaskPriority } from '@app/core/models';
@@ -261,23 +323,26 @@ import { Task, TaskPriority } from '@app/core/models';
   imports: [CommonModule, MatCardModule],
   templateUrl: './task-card.component.html',
   styleUrls: ['./task-card.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TaskCardComponent {
   @Input({ required: true }) task!: Task;
   @Output() taskClicked = new EventEmitter<number>();
-  @Output() taskMoved = new EventEmitter<{ taskId: number; toColumnId: number }>();
-  
+  @Output() taskMoved = new EventEmitter<{
+    taskId: number;
+    toColumnId: number;
+  }>();
+
   readonly TaskPriority = TaskPriority; // For template
-  
+
   onCardClick(): void {
     this.taskClicked.emit(this.task.id);
   }
-  
+
   onDrop(event: { toColumnId: number; toPosition: number }): void {
     this.taskMoved.emit({
       taskId: this.task.id,
-      toColumnId: event.toColumnId
+      toColumnId: event.toColumnId,
     });
   }
 }
@@ -286,6 +351,7 @@ export class TaskCardComponent {
 #### 2. Service Design
 
 **Always:**
+
 - Use proper typing
 - Handle errors
 - Return Observables from HttpClient
@@ -303,23 +369,23 @@ import { Board, ApiResponse, ErrorResponse } from '@app/core/models';
 @Injectable({ providedIn: 'root' })
 export class BoardService {
   private readonly apiUrl = `${environment.apiUrl}/boards`;
-  
+
   constructor(private http: HttpClient) {}
-  
+
   getBoard(id: number): Observable<Board> {
     return this.http.get<ApiResponse<Board>>(`${this.apiUrl}/${id}`).pipe(
-      map(response => response.data),
-      catchError(this.handleError)
+      map((response) => response.data),
+      catchError(this.handleError),
     );
   }
-  
+
   createBoard(request: CreateBoardRequest): Observable<Board> {
     return this.http.post<ApiResponse<Board>>(this.apiUrl, request).pipe(
-      map(response => response.data),
-      catchError(this.handleError)
+      map((response) => response.data),
+      catchError(this.handleError),
     );
   }
-  
+
   private handleError(error: HttpErrorResponse): Observable<never> {
     const errorResponse: ErrorResponse = error.error;
     console.error('API Error:', errorResponse);
@@ -331,6 +397,7 @@ export class BoardService {
 #### 3. State Management with RxJS
 
 **Use BehaviorSubject for component state:**
+
 ```typescript
 // board-detail.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
@@ -340,24 +407,24 @@ import { takeUntil } from 'rxjs/operators';
 export class BoardDetailComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private readonly boardState$ = new BehaviorSubject<Board | null>(null);
-  
+
   // Public observable for template
   readonly board$ = this.boardState$.asObservable();
-  
+
   ngOnInit(): void {
     this.loadBoard();
     this.setupRealtimeSync();
   }
-  
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
-  
+
   private setupRealtimeSync(): void {
     this.signalrService.onTaskMoved$
       .pipe(takeUntil(this.destroy$))
-      .subscribe(event => this.handleTaskMoved(event));
+      .subscribe((event) => this.handleTaskMoved(event));
   }
 }
 ```
@@ -365,6 +432,7 @@ export class BoardDetailComponent implements OnInit, OnDestroy {
 #### 4. Reactive Forms
 
 **Always use typed forms:**
+
 ```typescript
 // task-form.component.ts
 import { Component } from '@angular/core';
@@ -387,20 +455,20 @@ export class TaskFormComponent {
     assigneeId: FormControl<number | null>;
     dueDate: FormControl<Date | null>;
   }>;
-  
+
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       title: ['', [Validators.required, Validators.maxLength(200)]],
       description: [''],
       priority: [TaskPriority.Medium],
       assigneeId: [null],
-      dueDate: [null]
+      dueDate: [null],
     });
   }
-  
+
   onSubmit(): void {
     if (this.form.invalid) return;
-    
+
     const value: TaskFormValue = this.form.value as TaskFormValue;
     // Submit value
   }
@@ -428,7 +496,7 @@ public interface IRepository<T> where T : class
 public class TaskRepository : ITaskRepository
 {
     private readonly FlowBoardDbContext _context;
-    
+
     public async Task<IEnumerable<Task>> GetByColumnIdAsync(int columnId)
     {
         return await _context.Tasks
@@ -449,7 +517,7 @@ public interface IUnitOfWork : IDisposable
     ITaskRepository Tasks { get; }
     IBoardRepository Boards { get; }
     ITeamRepository Teams { get; }
-    
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 ```
@@ -465,15 +533,15 @@ import { AuthService } from '@app/core/services';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const token = authService.getToken();
-  
+
   if (token) {
     req = req.clone({
       setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
+        Authorization: `Bearer ${token}`,
+      },
     });
   }
-  
+
   return next(req);
 };
 ```
@@ -491,6 +559,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 - [ ] No `any` types used
 - [ ] Proper error handling implemented
 - [ ] Documentation updated if needed
+- [ ] **Frontend UI tested with Playwright MCP** (for UI components/features)
 
 ---
 
@@ -520,11 +589,13 @@ git commit -m "feat: add task comments feature"
 ### 2. Debugging
 
 **Backend:**
+
 - Use Serilog for structured logging
 - Check logs in console or `logs/` directory
 - Use breakpoints in VS Code debugger
 
 **Frontend:**
+
 - Use Angular DevTools for component inspection
 - Check Network tab for API calls
 - Use Redux DevTools for state (if using NgRx)
@@ -545,6 +616,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -554,6 +626,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `chore`: Build process or auxiliary tool changes
 
 **Examples:**
+
 ```bash
 feat(board): add drag-and-drop for tasks
 fix(auth): resolve token expiration issue
@@ -568,6 +641,7 @@ test(task): add unit tests for MoveTaskHandler
 ### Backend (C#)
 
 **Follow Microsoft C# Coding Conventions:**
+
 - Use PascalCase for classes, methods, properties
 - Use camelCase for local variables, parameters
 - Use `var` when type is obvious
@@ -587,6 +661,7 @@ public async Task<Result<TaskDto>> CreateTaskAsync(CreateTaskCommand command)
 ### Frontend (TypeScript)
 
 **Follow Angular Style Guide:**
+
 - Use camelCase for variables, functions
 - Use PascalCase for classes, interfaces, types
 - Prefix interfaces with `I` only when necessary (type vs interface decision)
@@ -636,6 +711,18 @@ const handleTaskClick = (taskId: number): void => {
 
 3. **Don't use `any` type**
    - Always define proper interfaces/types
+
+---
+
+## 🔔 Sound Notification (macOS)
+
+**IMPORTANT:** After finishing responding to my request or running a command, run this command to notify me by sound:
+
+```bash
+afplay /System/Library/Sounds/Funk.aiff
+```
+
+This uses macOS's built-in `afplay` command to play system sounds.
 
 ---
 
