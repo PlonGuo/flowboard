@@ -4,8 +4,8 @@ public interface IUnitOfWork : IDisposable
 {
     ITaskRepository Tasks { get; }
     IBoardRepository Boards { get; }
-    IRepository<Entities.User> Users { get; }
-    IRepository<Entities.Team> Teams { get; }
+    IUserRepository Users { get; }
+    ITeamRepository Teams { get; }
     IRepository<Entities.TeamMember> TeamMembers { get; }
     IRepository<Entities.Column> Columns { get; }
     IRepository<Entities.Comment> Comments { get; }
