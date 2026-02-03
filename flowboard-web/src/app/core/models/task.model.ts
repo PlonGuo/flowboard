@@ -77,8 +77,88 @@ export interface CreateTaskRequest {
 }
 
 export interface MoveTaskRequest {
-  taskId: number;
   toColumnId: number;
   toPosition: number;
   rowVersion: string;
+}
+
+export interface UpdateTaskRequest {
+  title: string;
+  description?: string;
+  priority: string;
+  assigneeId?: number | null;
+  dueDate?: string | null;
+  rowVersion: string;
+}
+
+// Response DTO from API (matches backend TaskItemDto)
+export interface TaskItemDto {
+  id: number;
+  title: string;
+  description?: string;
+  columnId: number;
+  columnName: string;
+  position: number;
+  assignee?: {
+    id: number;
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  priority: TaskPriority;
+  dueDate?: string;
+  createdBy: {
+    id: number;
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  commentCount: number;
+  rowVersion: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Response DTO from API (matches backend TaskItemDetailDto)
+export interface TaskItemDetailDto {
+  id: number;
+  title: string;
+  description?: string;
+  columnId: number;
+  columnName: string;
+  boardId: number;
+  boardName: string;
+  position: number;
+  assignee?: {
+    id: number;
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  priority: TaskPriority;
+  dueDate?: string;
+  createdBy: {
+    id: number;
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  comments: CommentDto[];
+  rowVersion: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CommentDto {
+  id: number;
+  content: string;
+  author: {
+    id: number;
+    fullName: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  isEdited: boolean;
 }

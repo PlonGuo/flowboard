@@ -35,9 +35,9 @@
           <span>Create Board</span>
         </button>
         <!-- Avatar with Dropdown -->
-        <div class="relative">
+        <div class="relative dropdown-container">
           <button
-            (click)="toggleDropdown()"
+            (click)="toggleDropdown(); $event.stopPropagation()"
             class="size-10 rounded-full border-2 border-primary/30 p-0.5 cursor-pointer hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
             <div

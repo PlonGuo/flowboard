@@ -423,6 +423,7 @@ local.env
 # ================================
 
 # Study guides (personal notes, not project docs)
+/docs/
 DOTNET_STUDY_GUIDE.md
 *_STUDY_GUIDE.md
 *_INTERVIEW_PREP.md

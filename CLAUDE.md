@@ -107,6 +107,9 @@ After completing any frontend UI component or function, **automatically test it 
 2. Take a snapshot using `browser_snapshot` to verify the UI structure
 3. Test user interactions (clicks, form fills, etc.) using appropriate Playwright tools
 4. Verify expected behavior and state changes
+5. User Username: `test@flowboard.dev` and password: `Test123!` to login the dashboard
+6. Open a new port `localhost:4201` for testing.
+7. **⚠️ CRITICAL: After Playwright testing is complete, ALWAYS kill BOTH frontend and backend ports** to avoid "port is already in use" errors in subsequent tests.
 
 **Example workflow after implementing a login form:**
 
@@ -137,6 +140,21 @@ After completing any frontend UI component or function, **automatically test it 
 - User interactions trigger expected behavior
 - No console errors after interactions
 - Navigation/routing works as expected
+
+**⚠️ Playwright Test Cleanup (MANDATORY):**
+
+After Playwright testing is finished, **always kill both frontend and backend ports**:
+
+```bash
+# Kill frontend port (4201 for testing)
+lsof -ti:4201 | xargs kill -9 2>/dev/null || true
+
+# Kill backend port (5000/5001)
+lsof -ti:5000 | xargs kill -9 2>/dev/null || true
+lsof -ti:5001 | xargs kill -9 2>/dev/null || true
+```
+
+This prevents "port is already in use" errors when running subsequent Playwright tests.
 
 ---
 
@@ -723,6 +741,17 @@ afplay /System/Library/Sounds/Funk.aiff
 ```
 
 This uses macOS's built-in `afplay` command to play system sounds.
+
+---
+
+## 🚀 Git Push Prompt
+
+**IMPORTANT:** After finishing implementing a feature, **always ask the user** if they want to push the current changes to GitHub.
+
+Example prompt:
+> "The feature implementation is complete. Would you like me to commit and push these changes to GitHub?"
+
+This ensures the user has control over when changes are pushed to the remote repository.
 
 ---
 

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit, HostListener, ElementRef } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { BoardService } from '../../../core/services/board.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -15,6 +15,18 @@ import { BoardSummaryDto } from '../../../core/models/board.model';
 export class DashboardComponent implements OnInit {
   private readonly boardService = inject(BoardService);
   private readonly authService = inject(AuthService);
+  private readonly elementRef = inject(ElementRef);
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    // Close dropdown if clicking outside of it
+    if (this.dropdownOpen()) {
+      const dropdownElement = this.elementRef.nativeElement.querySelector('.dropdown-container');
+      if (dropdownElement && !dropdownElement.contains(event.target as Node)) {
+        this.closeDropdown();
+      }
+    }
+  }
 
   // Board state from service
   readonly boards = this.boardService.boards;
