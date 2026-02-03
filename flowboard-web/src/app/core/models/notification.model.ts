@@ -1,19 +1,22 @@
 export enum NotificationType {
-  Assignment = 'Assignment',
-  StatusChange = 'StatusChange',
-  Mention = 'Mention',
-  Comment = 'Comment',
-  DueDate = 'DueDate',
+  TaskAssigned = 'TaskAssigned',
+  TaskStatusChanged = 'TaskStatusChanged',
+  TaskDueDateApproaching = 'TaskDueDateApproaching',
+  Mentioned = 'Mentioned',
+  CommentAdded = 'CommentAdded',
+  BoardInvitation = 'BoardInvitation',
+  TeamInvitation = 'TeamInvitation',
 }
 
-export interface Notification {
+export interface NotificationDto {
   id: number;
   userId: number;
   type: NotificationType;
   title: string;
   message: string;
+  relatedTaskId?: number;
+  relatedBoardId?: number;
   isRead: boolean;
-  entityType?: string;
-  entityId?: number;
-  createdAt: Date;
+  createdAt: string;
+  readAt?: string;
 }

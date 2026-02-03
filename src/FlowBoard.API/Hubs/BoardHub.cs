@@ -102,6 +102,16 @@ public class BoardHub : Hub
     public override async Task OnConnectedAsync()
     {
         _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
+
+        // Add user to their personal notification group
+        var userId = Context.UserIdentifier;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            var userGroupName = GetUserGroupName(userId);
+            await Groups.AddToGroupAsync(Context.ConnectionId, userGroupName);
+            _logger.LogInformation("User {UserId} added to notification group {GroupName}", userId, userGroupName);
+        }
+
         await base.OnConnectedAsync();
     }
 
@@ -112,4 +122,5 @@ public class BoardHub : Hub
     }
 
     private static string GetBoardGroupName(int boardId) => $"board-{boardId}";
+    private static string GetUserGroupName(string userId) => $"user_{userId}";
 }

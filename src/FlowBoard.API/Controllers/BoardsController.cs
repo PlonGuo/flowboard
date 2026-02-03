@@ -156,6 +156,41 @@ public class BoardsController : ControllerBase
     }
 
     /// <summary>
+    /// Get all team members who can be assigned to tasks on a board.
+    /// </summary>
+    [HttpGet("{id:int}/members")]
+    [ProducesResponseType(typeof(IEnumerable<UserSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IEnumerable<UserSummaryDto>>> GetBoardMembers(int id)
+    {
+        var userId = GetUserId();
+        if (userId == 0)
+        {
+            return Unauthorized();
+        }
+
+        var query = new GetBoardMembersQuery(id, userId);
+        var result = await _mediator.Send(query);
+
+        if (result.IsFailure)
+        {
+            if (result.Error!.Contains("not found", StringComparison.OrdinalIgnoreCase))
+            {
+                return NotFound(new { message = result.Error });
+            }
+            if (result.Error.Contains("access", StringComparison.OrdinalIgnoreCase))
+            {
+                return Forbid();
+            }
+            return BadRequest(new { message = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>
     /// Delete a board.
     /// </summary>
     [HttpDelete("{id:int}")]

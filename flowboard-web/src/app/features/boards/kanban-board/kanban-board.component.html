@@ -87,19 +87,47 @@
           <button class="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-full text-sm font-semibold transition-all">
             Share
           </button>
-          <button class="size-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white transition-all">
-            <span class="material-symbols-outlined">notifications</span>
-          </button>
-          @if (currentBoard.createdBy?.avatarUrl) {
-            <div
-              class="size-10 rounded-full bg-cover bg-center border border-white/20"
-              [style.background-image]="'url(' + currentBoard.createdBy.avatarUrl + ')'"
-            ></div>
-          } @else {
-            <div class="size-10 rounded-full bg-primary/30 flex items-center justify-center border border-white/20">
-              <span class="material-symbols-outlined text-white">person</span>
-            </div>
-          }
+          <app-notification-bell />
+          <!-- Avatar with Dropdown -->
+          <div class="relative dropdown-container">
+            <button
+              (click)="toggleDropdown(); $event.stopPropagation()"
+              class="size-10 rounded-full border-2 border-primary/30 p-0.5 cursor-pointer hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <div
+                class="w-full h-full rounded-full bg-cover bg-center bg-primary/20"
+                [style.background-image]="'url(' + avatarUrl() + ')'"
+              ></div>
+            </button>
+
+            @if (dropdownOpen()) {
+              <div class="absolute right-0 mt-2 w-64 glass-card rounded-xl shadow-2xl py-2 z-50 border border-white/10">
+                <!-- User Info -->
+                <div class="px-4 py-3 border-b border-white/10">
+                  <p class="text-white font-semibold truncate">{{ user()?.fullName }}</p>
+                  <p class="text-white/50 text-sm truncate">{{ user()?.email }}</p>
+                </div>
+
+                <!-- Menu Items -->
+                <a
+                  routerLink="/settings/profile"
+                  class="flex items-center gap-3 px-4 py-3 text-white/80 hover:bg-white/10 transition-colors"
+                  (click)="closeDropdown()"
+                >
+                  <span class="material-symbols-outlined text-[20px]">person</span>
+                  <span>Profile Settings</span>
+                </a>
+
+                <button
+                  (click)="logout()"
+                  class="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-white/10 transition-colors"
+                >
+                  <span class="material-symbols-outlined text-[20px]">logout</span>
+                  <span>Logout</span>
+                </button>
+              </div>
+            }
+          </div>
         </div>
       </header>
 
@@ -135,11 +163,20 @@
                 <span class="material-symbols-outlined">more_horiz</span>
               </button>
             </div>
-            <div class="flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-280px)] pr-1">
+            <div
+              cdkDropList
+              [id]="'column-' + column.id"
+              [cdkDropListData]="getTasksForColumn(column)"
+              [cdkDropListConnectedTo]="columnDropListIds()"
+              (cdkDropListDropped)="onTaskDrop($event)"
+              class="flex flex-col gap-4 overflow-y-auto max-h-[calc(100vh-280px)] pr-1 min-h-[100px]"
+            >
               @for (task of getTasksForColumn(column); track task.id) {
                 <div
+                  cdkDrag
+                  [cdkDragData]="task"
                   (click)="openTaskDetails(task)"
-                  class="glass-card rounded-xl p-5 cursor-pointer hover:border-white/20 transition-all"
+                  class="glass-card rounded-xl p-5 cursor-grab hover:border-white/20 transition-all active:cursor-grabbing"
                 >
                   <h3 class="text-white font-medium mb-4 leading-relaxed">
                     {{ task.title }}
@@ -186,6 +223,7 @@
                 </div>
               }
               <button
+                (click)="openCreateTaskForm(column.id)"
                 class="flex items-center justify-center gap-2 p-3 rounded-xl border-2 border-dashed border-white/5 hover:border-white/10 hover:bg-white/5 transition-all text-white/40 hover:text-white/60"
               >
                 <span class="material-symbols-outlined">add</span>
@@ -226,13 +264,58 @@
         </div>
         <h1 class="text-2xl font-bold text-white mt-1">{{ task.title }}</h1>
       </div>
-      <button
-        (click)="closeTaskDetails()"
-        class="size-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
-      >
-        <span class="material-symbols-outlined text-white">close</span>
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          (click)="openEditTaskForm(task)"
+          class="size-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
+          title="Edit task"
+        >
+          <span class="material-symbols-outlined text-white text-xl">edit</span>
+        </button>
+        <button
+          (click)="confirmDeleteTask()"
+          class="size-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-colors"
+          title="Delete task"
+        >
+          <span class="material-symbols-outlined text-red-400 text-xl">delete</span>
+        </button>
+        <button
+          (click)="closeTaskDetails()"
+          class="size-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
+        >
+          <span class="material-symbols-outlined text-white">close</span>
+        </button>
+      </div>
     </header>
+
+    <!-- Delete Confirmation -->
+    @if (showDeleteConfirm()) {
+      <div class="absolute inset-0 bg-black/60 z-10 flex items-center justify-center">
+        <div class="bg-gray-900 border border-white/10 rounded-2xl p-6 max-w-sm mx-4">
+          <h3 class="text-lg font-bold text-white mb-2">Delete Task</h3>
+          <p class="text-white/60 mb-6">Are you sure you want to delete "{{ task.title }}"? This action cannot be undone.</p>
+          <div class="flex gap-3">
+            <button
+              (click)="cancelDelete()"
+              class="flex-1 px-4 py-2 border border-white/20 rounded-lg text-white/80 hover:bg-white/10 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              (click)="deleteTask()"
+              [disabled]="isDeleting()"
+              class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors disabled:opacity-50"
+            >
+              @if (isDeleting()) {
+                Deleting...
+              } @else {
+                Delete
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
     <!-- Content -->
     <div class="flex-1 overflow-y-auto px-8 py-6 space-y-8">
       <section>
@@ -264,17 +347,35 @@
         </section>
       }
     </div>
+    <!-- Comments Section -->
     <footer class="p-6 border-t border-white/10 bg-black/20">
-      <div class="flex items-center gap-3 bg-black/30 border border-white/10 rounded-full p-1.5 pl-5">
-        <input
-          class="bg-transparent border-none focus:ring-0 text-sm flex-1 placeholder:text-white/30 text-white"
-          placeholder="Write a comment or ask AI..."
-          type="text"
-        />
-        <button class="size-10 rounded-full bg-primary flex items-center justify-center hover:scale-105 transition-transform">
-          <span class="material-symbols-outlined text-white">send</span>
-        </button>
-      </div>
+      <h2 class="text-lg font-bold flex items-center gap-2 mb-4">
+        <span class="material-symbols-outlined text-white/60">chat_bubble</span>
+        Comments
+        @if (taskComments().length > 0) {
+          <span class="text-sm font-normal text-white/40">({{ taskComments().length }})</span>
+        }
+      </h2>
+      <app-comment-list
+        [comments]="taskComments()"
+        [boardMembers]="boardMembers()"
+        [isLoading]="isLoadingComments()"
+        [isSaving]="isSavingComment()"
+        (addComment)="onAddComment($event)"
+        (updateComment)="onUpdateComment($event)"
+        (deleteComment)="onDeleteComment($event)"
+      />
     </footer>
   </div>
+}
+
+<!-- Task Form Dialog -->
+@if (showTaskForm()) {
+  <app-task-form-dialog
+    [task]="editingTask()"
+    [columnId]="taskFormColumnId()"
+    [boardId]="board()?.id"
+    (saved)="onTaskSaved($event)"
+    (cancelled)="closeTaskForm()"
+  />
 }

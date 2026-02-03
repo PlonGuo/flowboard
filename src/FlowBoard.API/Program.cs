@@ -1,7 +1,10 @@
 using FlowBoard.API.Hubs;
 using FlowBoard.API.Middleware;
+using FlowBoard.API.Services;
 using FlowBoard.Application;
+using FlowBoard.Core.Interfaces;
 using FlowBoard.Infrastructure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +29,10 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // Configure SignalR
 builder.Services.AddSignalR();
+
+// Register SignalR notification services for real-time updates
+builder.Services.AddScoped<IBoardNotificationService, SignalRBoardNotificationService>();
+builder.Services.AddScoped<IUserNotificationService, SignalRUserNotificationService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -55,6 +62,23 @@ builder.Services.AddAuthentication()
             IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
                 System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "DefaultSecretKeyForDevelopment123!"))
         };
+
+        // Allow SignalR to receive JWT token from query string (WebSocket connections can't send headers)
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
@@ -70,8 +94,15 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+// CORS must come before HTTPS redirection to handle preflight requests
 app.UseCors("AllowFrontend");
+
+// Only use HTTPS redirection in production
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 

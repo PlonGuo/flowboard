@@ -1,0 +1,156 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center p-4"
+  (click)="onBackdropClick($event)"
+>
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+  <!-- Dialog -->
+  <div class="glass-card relative w-full max-w-md p-6 rounded-2xl shadow-2xl bg-gray-900/95 border border-white/10 max-h-[90vh] overflow-y-auto">
+    <button
+      type="button"
+      (click)="onCancel()"
+      class="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+    >
+      <span class="material-symbols-outlined">close</span>
+    </button>
+
+    <h2 class="text-2xl font-bold text-white mb-6">
+      {{ isEditMode ? 'Edit Task' : 'Create New Task' }}
+    </h2>
+
+    @if (errorMessage()) {
+      <div class="mb-4 p-3 bg-red-500/20 border border-red-500/40 rounded-lg text-red-400 text-sm">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-5">
+      <!-- Title Field -->
+      <div>
+        <label class="block text-white/60 text-sm font-medium mb-2">
+          Title *
+        </label>
+        <input
+          formControlName="title"
+          type="text"
+          class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+          placeholder="e.g., Implement user authentication"
+        />
+        @if (form.controls.title.touched && form.controls.title.errors) {
+          <p class="text-red-400 text-sm mt-1">
+            @if (form.controls.title.errors['required']) {
+              Title is required
+            } @else if (form.controls.title.errors['maxlength']) {
+              Title must not exceed 200 characters
+            }
+          </p>
+        }
+      </div>
+
+      <!-- Description Field -->
+      <div>
+        <label class="block text-white/60 text-sm font-medium mb-2">
+          Description
+        </label>
+        <textarea
+          formControlName="description"
+          rows="4"
+          class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
+          placeholder="Describe the task..."
+        ></textarea>
+        @if (form.controls.description.touched && form.controls.description.errors?.['maxlength']) {
+          <p class="text-red-400 text-sm mt-1">
+            Description must not exceed 2000 characters
+          </p>
+        }
+      </div>
+
+      <!-- Priority Field -->
+      <div>
+        <label class="block text-white/60 text-sm font-medium mb-2">
+          Priority
+        </label>
+        <div class="flex gap-2">
+          @for (priority of priorities; track priority.value) {
+            <button
+              type="button"
+              (click)="form.controls.priority.setValue(priority.value)"
+              [class]="
+                form.controls.priority.value === priority.value
+                  ? 'flex-1 px-4 py-2 rounded-lg font-medium transition-all ' + priority.color + ' text-white'
+                  : 'flex-1 px-4 py-2 rounded-lg font-medium transition-all bg-white/5 text-white/60 hover:bg-white/10'
+              "
+            >
+              {{ priority.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Due Date Field -->
+      <div>
+        <label class="block text-white/60 text-sm font-medium mb-2">
+          Due Date
+        </label>
+        <input
+          formControlName="dueDate"
+          type="date"
+          class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all [color-scheme:dark]"
+        />
+      </div>
+
+      <!-- Assignee Field -->
+      <div>
+        <label class="block text-white/60 text-sm font-medium mb-2">
+          Assignee
+        </label>
+        @if (loadingMembers()) {
+          <div class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white/40">
+            Loading team members...
+          </div>
+        } @else {
+          <select
+            formControlName="assigneeId"
+            class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all appearance-none cursor-pointer"
+          >
+            <option [ngValue]="null" class="bg-gray-900 text-white">Unassigned</option>
+            @for (member of teamMembers(); track member.id) {
+              <option [ngValue]="member.id" class="bg-gray-900 text-white">
+                {{ member.fullName }}
+              </option>
+            }
+          </select>
+        }
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-3 pt-4">
+        <button
+          type="button"
+          (click)="onCancel()"
+          class="flex-1 px-6 py-3 border border-white/20 rounded-lg font-semibold text-white/80 hover:bg-white/10 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          [disabled]="isSubmitting()"
+          class="flex-1 px-6 py-3 bg-primary hover:bg-primary/90 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (isSubmitting()) {
+            <span class="flex items-center justify-center gap-2">
+              <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              {{ isEditMode ? 'Saving...' : 'Creating...' }}
+            </span>
+          } @else {
+            {{ isEditMode ? 'Save Changes' : 'Create Task' }}
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,134 @@
+<div
+  class="w-96 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden"
+>
+  <!-- Header -->
+  <div
+    class="flex items-center justify-between px-4 py-3 border-b border-gray-700"
+  >
+    <h3 class="text-lg font-semibold text-white">Notifications</h3>
+    @if (notificationService.hasUnread()) {
+      <button
+        type="button"
+        class="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+        (click)="onMarkAllAsRead()"
+      >
+        Mark all as read
+      </button>
+    }
+  </div>
+
+  <!-- Notification List -->
+  <div class="max-h-96 overflow-y-auto">
+    @if (notificationService.loading()) {
+      <div class="flex items-center justify-center py-8">
+        <svg
+          class="animate-spin h-6 w-6 text-blue-500"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+      </div>
+    } @else if (notificationService.notifications().length === 0) {
+      <div class="flex flex-col items-center justify-center py-12 px-4">
+        <svg
+          class="w-12 h-12 text-gray-500 mb-3"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+          />
+        </svg>
+        <p class="text-gray-400 text-sm">No notifications yet</p>
+      </div>
+    } @else {
+      @for (
+        notification of notificationService.notifications();
+        track notification.id
+      ) {
+        <div
+          class="flex items-start gap-3 px-4 py-3 hover:bg-gray-750 cursor-pointer transition-colors border-b border-gray-700/50 last:border-b-0"
+          [class.bg-gray-750]="!notification.isRead"
+          (click)="onNotificationClick(notification)"
+        >
+          <!-- Icon -->
+          <div
+            class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
+            [class]="getIconBgColor(notification.type)"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                [attr.d]="getNotificationIcon(notification.type)"
+              />
+            </svg>
+          </div>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-2">
+              <p
+                class="text-sm font-medium text-white truncate"
+                [class.font-bold]="!notification.isRead"
+              >
+                {{ notification.title }}
+              </p>
+              <!-- Unread indicator -->
+              @if (!notification.isRead) {
+                <span class="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full">
+                </span>
+              }
+            </div>
+            <p class="text-sm text-gray-400 line-clamp-2 mt-0.5">
+              {{ notification.message }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              {{ formatRelativeTime(notification.createdAt) }}
+            </p>
+          </div>
+
+          <!-- Delete button -->
+          <button
+            type="button"
+            class="flex-shrink-0 p-1 text-gray-500 hover:text-red-400 transition-colors rounded"
+            (click)="onDeleteNotification($event, notification.id)"
+            title="Delete notification"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      }
+    }
+  </div>
+</div>

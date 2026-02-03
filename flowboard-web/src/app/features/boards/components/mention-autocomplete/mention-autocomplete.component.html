@@ -1,0 +1,44 @@
+@if (filteredMembers().length > 0) {
+  <div
+    class="bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden"
+  >
+    @for (member of filteredMembers(); track member.id; let i = $index) {
+      <button
+        type="button"
+        class="w-full flex items-center gap-3 px-3 py-2 text-left transition-colors"
+        [class.bg-primary/20]="i === selectedIndex()"
+        [class.hover:bg-white/5]="i !== selectedIndex()"
+        (click)="onSelect(member)"
+        (mouseenter)="onHover(i)"
+      >
+        <!-- Avatar -->
+        @if (member.avatarUrl) {
+          <div
+            class="w-8 h-8 rounded-full bg-cover bg-center flex-shrink-0"
+            [style.background-image]="'url(' + member.avatarUrl + ')'"
+          ></div>
+        } @else {
+          <div
+            class="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center text-xs font-medium text-white flex-shrink-0"
+          >
+            {{ getInitials(member.fullName) }}
+          </div>
+        }
+
+        <!-- Name and Email -->
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-white truncate">
+            {{ member.fullName }}
+          </p>
+          <p class="text-xs text-gray-400 truncate">{{ member.email }}</p>
+        </div>
+      </button>
+    }
+  </div>
+} @else {
+  <div
+    class="bg-gray-800 border border-gray-700 rounded-lg shadow-xl px-3 py-2"
+  >
+    <p class="text-sm text-gray-400">No members found</p>
+  </div>
+}

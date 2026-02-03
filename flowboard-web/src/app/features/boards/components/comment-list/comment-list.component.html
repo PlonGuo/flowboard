@@ -1,0 +1,147 @@
+<div class="flex flex-col h-full">
+  <!-- Comments List -->
+  <div class="flex-1 overflow-y-auto space-y-4 mb-4 max-h-[300px]">
+    @if (isLoading) {
+      <div class="flex items-center justify-center py-8">
+        <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+    } @else if (sortedComments().length === 0) {
+      <div class="text-center py-6 text-white/40">
+        <span class="material-symbols-outlined text-3xl mb-2">chat_bubble</span>
+        <p class="text-sm">No comments yet</p>
+      </div>
+    } @else {
+      @for (comment of sortedComments(); track comment.id) {
+        <div class="bg-white/5 rounded-xl p-4 border border-white/5">
+          <!-- Comment Header -->
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex items-center gap-3">
+              @if (comment.author?.avatarUrl) {
+                <div
+                  class="size-8 rounded-full bg-cover bg-center"
+                  [style.background-image]="'url(' + comment.author.avatarUrl + ')'"
+                ></div>
+              } @else {
+                <div class="size-8 rounded-full bg-primary/30 flex items-center justify-center text-xs font-medium text-white">
+                  {{ getAuthorInitials(comment.author) }}
+                </div>
+              }
+              <div>
+                <span class="text-white font-medium text-sm">
+                  {{ comment.author?.fullName || 'Unknown User' }}
+                </span>
+                <div class="flex items-center gap-2 text-white/40 text-xs">
+                  <span>{{ formatDate(comment.createdAt) }}</span>
+                  @if (comment.isEdited) {
+                    <span class="italic">(edited)</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            @if (canEditComment(comment) && editingCommentId() !== comment.id) {
+              <div class="flex items-center gap-1">
+                <button
+                  (click)="startEdit(comment)"
+                  class="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                  title="Edit comment"
+                >
+                  <span class="material-symbols-outlined text-[16px]">edit</span>
+                </button>
+                <button
+                  (click)="confirmDelete(comment.id)"
+                  class="p-1.5 rounded-lg hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors"
+                  title="Delete comment"
+                >
+                  <span class="material-symbols-outlined text-[16px]">delete</span>
+                </button>
+              </div>
+            }
+          </div>
+
+          <!-- Comment Content (View Mode) -->
+          @if (editingCommentId() !== comment.id) {
+            <p
+              class="text-white/80 text-sm whitespace-pre-wrap break-words"
+              [innerHTML]="parseCommentWithMentions(comment.content)"
+            ></p>
+          }
+
+          <!-- Comment Content (Edit Mode) -->
+          @if (editingCommentId() === comment.id) {
+            <div class="mt-2">
+              <textarea
+                [ngModel]="editContent()"
+                (ngModelChange)="editContent.set($event)"
+                class="w-full bg-black/30 border border-white/10 rounded-lg p-3 text-white text-sm resize-none focus:ring-1 focus:ring-primary focus:border-primary"
+                rows="3"
+                placeholder="Edit your comment..."
+              ></textarea>
+              <div class="flex justify-end gap-2 mt-2">
+                <button
+                  (click)="cancelEdit()"
+                  class="px-3 py-1.5 text-sm text-white/60 hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  (click)="saveEdit()"
+                  [disabled]="!editContent().trim()"
+                  class="px-3 py-1.5 bg-primary hover:bg-primary/90 rounded-lg text-sm text-white transition-colors disabled:opacity-50"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <!-- New Comment Form -->
+  <div class="relative">
+    <!-- Mention Autocomplete -->
+    @if (showMentionAutocomplete() && membersList().length > 0) {
+      <div class="absolute bottom-full left-0 mb-2 w-64 z-10">
+        <app-mention-autocomplete
+          [members]="membersList()"
+          [searchQuery]="mentionQuery()"
+          [excludeUserId]="currentUserId()"
+          (selectMember)="onMemberSelect($event)"
+          (closeAutocomplete)="closeMentionAutocomplete()"
+        />
+      </div>
+    }
+
+    <div class="flex items-center gap-3 bg-black/30 border border-white/10 rounded-full p-1.5 pl-5">
+      <input
+        #commentInput
+        type="text"
+        [value]="newCommentContent()"
+        (input)="onCommentInput($event)"
+        (keydown)="onInputKeydown($event)"
+        class="bg-transparent border-none focus:ring-0 text-sm flex-1 placeholder:text-white/30 text-white"
+        placeholder="Write a comment... (use @ to mention)"
+        [disabled]="isSaving"
+      />
+      <button
+        (click)="submitComment()"
+        [disabled]="!newCommentContent().trim() || isSaving"
+        class="size-10 rounded-full bg-primary flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
+      >
+        @if (isSaving) {
+          <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        } @else {
+          <span class="material-symbols-outlined text-white">send</span>
+        }
+      </button>
+    </div>
+  </div>
+</div>

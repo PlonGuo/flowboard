@@ -1,4 +1,5 @@
 using FlowBoard.Application.Behaviors;
+using FlowBoard.Application.Services;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,6 +27,9 @@ public static class DependencyInjection
 
         // Register AutoMapper (scans assembly for profiles)
         services.AddAutoMapper(assembly);
+
+        // Register application services
+        services.AddScoped<IMentionService, MentionService>();
 
         return services;
     }

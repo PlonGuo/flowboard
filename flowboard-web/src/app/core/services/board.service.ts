@@ -9,6 +9,7 @@ import {
   UpdateBoardRequest,
   ApiError,
   BoardDto,
+  UserSummaryDto,
 } from '../models/board.model';
 
 @Injectable({ providedIn: 'root' })
@@ -104,6 +105,15 @@ export class BoardService {
       }),
       catchError((error) => this.handleError(error))
     );
+  }
+
+  /**
+   * Get all team members who can be assigned to tasks on a board.
+   */
+  getBoardMembers(boardId: number): Observable<UserSummaryDto[]> {
+    return this.http
+      .get<UserSummaryDto[]>(`${this.apiUrl}/${boardId}/members`)
+      .pipe(catchError((error) => this.handleError(error)));
   }
 
   /**
