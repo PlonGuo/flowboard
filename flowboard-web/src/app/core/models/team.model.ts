@@ -9,8 +9,10 @@ export interface TeamDto {
   id: number;
   name: string;
   description?: string;
+  inviteCode: string;
   owner: UserSummaryDto;
   memberCount: number;
+  currentUserRole?: TeamRole;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,4 +28,8 @@ export interface TeamMemberDto {
 export interface CreateTeamRequest {
   name: string;
   description?: string;
+}
+
+export interface JoinTeamRequest {
+  inviteCode: string;
 }

@@ -8,4 +8,5 @@ public interface ITeamRepository : IRepository<Team>
     Task<IEnumerable<Team>> GetByUserIdAsync(int userId);
     Task<bool> IsUserMemberAsync(int teamId, int userId);
     Task<bool> IsUserOwnerAsync(int teamId, int userId);
+    Task<Team?> GetByInviteCodeAsync(string inviteCode);
 }

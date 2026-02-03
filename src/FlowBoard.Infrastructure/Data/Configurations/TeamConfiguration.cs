@@ -19,6 +19,13 @@ public class TeamConfiguration : IEntityTypeConfiguration<Team>
         builder.Property(t => t.Description)
             .HasMaxLength(500);
 
+        builder.Property(t => t.InviteCode)
+            .IsRequired()
+            .HasMaxLength(20);
+
+        builder.HasIndex(t => t.InviteCode)
+            .IsUnique();
+
         builder.HasOne(t => t.Owner)
             .WithMany(u => u.OwnedTeams)
             .HasForeignKey(t => t.OwnerId)

@@ -25,6 +25,7 @@ public record BoardDetailDto
     public string? Description { get; init; }
     public int TeamId { get; init; }
     public string TeamName { get; init; } = string.Empty;
+    public string TeamInviteCode { get; init; } = string.Empty;
     public UserSummaryDto CreatedBy { get; init; } = null!;
     public IReadOnlyList<ColumnDto> Columns { get; init; } = Array.Empty<ColumnDto>();
     public DateTime CreatedAt { get; init; }
@@ -39,6 +40,7 @@ public record BoardSummaryDto
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string? Description { get; init; }
+    public int TeamId { get; init; }
     public int TaskCount { get; init; }
     public int ColumnCount { get; init; }
     public DateTime UpdatedAt { get; init; }

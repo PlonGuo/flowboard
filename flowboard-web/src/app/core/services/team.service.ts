@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, tap, catchError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { TeamDto, CreateTeamRequest } from '../models/team.model';
+import { TeamDto, CreateTeamRequest, JoinTeamRequest } from '../models/team.model';
 import { ApiError } from '../models/board.model';
 
 @Injectable({ providedIn: 'root' })
@@ -43,6 +43,46 @@ export class TeamService {
     return this.http.post<TeamDto>(this.apiUrl, request).pipe(
       tap((team) => {
         this.teamsState.update((teams) => [team, ...teams]);
+      }),
+      catchError((error) => this.handleError(error))
+    );
+  }
+
+  /**
+   * Join a team using an invite code.
+   */
+  joinTeamByCode(request: JoinTeamRequest): Observable<TeamDto> {
+    return this.http.post<TeamDto>(`${this.apiUrl}/join`, request).pipe(
+      tap((team) => {
+        // Add the joined team to the list if not already present
+        this.teamsState.update((teams) => {
+          const exists = teams.some((t) => t.id === team.id);
+          return exists ? teams : [team, ...teams];
+        });
+      }),
+      catchError((error) => this.handleError(error))
+    );
+  }
+
+  /**
+   * Delete a team (owner only). Deletes all associated boards and tasks.
+   */
+  deleteTeam(teamId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${teamId}`).pipe(
+      tap(() => {
+        this.teamsState.update((teams) => teams.filter((t) => t.id !== teamId));
+      }),
+      catchError((error) => this.handleError(error))
+    );
+  }
+
+  /**
+   * Leave a team (members only).
+   */
+  leaveTeam(teamId: number): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${teamId}/leave`, {}).pipe(
+      tap(() => {
+        this.teamsState.update((teams) => teams.filter((t) => t.id !== teamId));
       }),
       catchError((error) => this.handleError(error))
     );

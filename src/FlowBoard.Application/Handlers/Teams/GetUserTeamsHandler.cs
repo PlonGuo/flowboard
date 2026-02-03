@@ -2,6 +2,7 @@ using AutoMapper;
 using FlowBoard.Application.Common;
 using FlowBoard.Application.DTOs;
 using FlowBoard.Application.Queries.Teams;
+using FlowBoard.Core.Enums;
 using FlowBoard.Core.Interfaces;
 using MediatR;
 
@@ -23,7 +24,13 @@ public class GetUserTeamsHandler : IRequestHandler<GetUserTeamsQuery, Result<IEn
         CancellationToken cancellationToken)
     {
         var teams = await _unitOfWork.Teams.GetByUserIdAsync(request.UserId);
-        var teamDtos = _mapper.Map<IEnumerable<TeamDto>>(teams);
-        return Result.Success(teamDtos);
+        var teamDtos = teams.Select(team =>
+        {
+            var dto = _mapper.Map<TeamDto>(team);
+            // Set CurrentUserRole based on ownership
+            var role = team.OwnerId == request.UserId ? TeamRole.Owner : TeamRole.Member;
+            return dto with { CurrentUserRole = role };
+        }).ToList();
+        return Result.Success<IEnumerable<TeamDto>>(teamDtos);
     }
 }

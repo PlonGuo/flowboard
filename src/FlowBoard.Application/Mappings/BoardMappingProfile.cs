@@ -12,7 +12,8 @@ public class BoardMappingProfile : Profile
             .ForMember(dest => dest.TeamName, opt => opt.MapFrom(src => src.Team.Name));
 
         CreateMap<Board, BoardDetailDto>()
-            .ForMember(dest => dest.TeamName, opt => opt.MapFrom(src => src.Team.Name));
+            .ForMember(dest => dest.TeamName, opt => opt.MapFrom(src => src.Team.Name))
+            .ForMember(dest => dest.TeamInviteCode, opt => opt.MapFrom(src => src.Team.InviteCode));
 
         CreateMap<Board, BoardSummaryDto>()
             .ForMember(dest => dest.TaskCount, opt => opt.MapFrom(src =>

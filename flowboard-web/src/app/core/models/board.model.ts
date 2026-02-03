@@ -46,6 +46,7 @@ export interface BoardDetailDto {
   description?: string;
   teamId: number;
   teamName: string;
+  teamInviteCode: string;
   createdBy: UserSummaryDto;
   columns: ColumnApiDto[];
   createdAt: string;
@@ -56,6 +57,7 @@ export interface BoardSummaryDto {
   id: number;
   name: string;
   description?: string;
+  teamId: number;
   taskCount: number;
   columnCount: number;
   updatedAt: string;

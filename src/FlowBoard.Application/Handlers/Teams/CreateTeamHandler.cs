@@ -31,11 +31,12 @@ public class CreateTeamHandler : IRequestHandler<CreateTeamCommand, Result<TeamD
             return Result.Failure<TeamDto>("User not found");
         }
 
-        // Create the team
+        // Create the team with unique invite code
         var team = new Team
         {
             Name = request.Name.Trim(),
             Description = request.Description?.Trim(),
+            InviteCode = GenerateInviteCode(),
             OwnerId = request.UserId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -58,5 +59,14 @@ public class CreateTeamHandler : IRequestHandler<CreateTeamCommand, Result<TeamD
         // Reload with navigation properties
         var createdTeam = await _unitOfWork.Teams.GetByIdWithMembersAsync(team.Id);
         return _mapper.Map<TeamDto>(createdTeam);
+    }
+
+    private static string GenerateInviteCode()
+    {
+        // Characters that are easy to read and type (no confusing chars like 0/O, 1/I/L)
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var random = Random.Shared;
+        return new string(Enumerable.Repeat(chars, 8)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
     }
 }

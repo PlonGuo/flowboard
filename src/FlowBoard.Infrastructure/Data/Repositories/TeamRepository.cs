@@ -41,4 +41,13 @@ public class TeamRepository : Repository<Team>, ITeamRepository
         return await DbSet
             .AnyAsync(t => t.Id == teamId && t.OwnerId == userId);
     }
+
+    public async Task<Team?> GetByInviteCodeAsync(string inviteCode)
+    {
+        return await DbSet
+            .Include(t => t.Owner)
+            .Include(t => t.Members)
+                .ThenInclude(m => m.User)
+            .FirstOrDefaultAsync(t => t.InviteCode == inviteCode.ToUpperInvariant());
+    }
 }
