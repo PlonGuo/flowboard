@@ -65,6 +65,7 @@ export class BoardService {
           id: board.id,
           name: board.name,
           description: board.description,
+          teamId: board.teamId,
           taskCount: 0,
           columnCount: board.columns.length,
           updatedAt: board.updatedAt,

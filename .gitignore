@@ -426,7 +426,9 @@ local.env
 /docs/
 DOTNET_STUDY_GUIDE.md
 *_STUDY_GUIDE.md
-*_INTERVIEW_PREP.md.playwright-mcp/
+*_INTERVIEW_PREP.md
+.playwright-mcp/
 bin/
 obj/
 *.dll
+/design-reference/

@@ -9,6 +9,7 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   NgZone,
+  WritableSignal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject, takeUntil, debounceTime } from 'rxjs';
@@ -16,6 +17,27 @@ import { CanvasService } from '../../../core/services/canvas.service';
 import { CanvasSignalRService } from '../../../core/services/canvas-signalr.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CanvasDetailDto, CanvasUser } from '../../../core/models/canvas.model';
+
+/** Tool definition for the custom toolbar */
+interface CanvasTool {
+  type: string;
+  icon: string;
+  label: string;
+}
+
+/** Available drawing tools matching Excalidraw's tool types */
+const CANVAS_TOOLS: CanvasTool[] = [
+  { type: 'selection', icon: 'near_me', label: 'Select' },
+  { type: 'rectangle', icon: 'rectangle', label: 'Rectangle' },
+  { type: 'diamond', icon: 'change_history', label: 'Diamond' },
+  { type: 'ellipse', icon: 'circle', label: 'Ellipse' },
+  { type: 'arrow', icon: 'arrow_right_alt', label: 'Arrow' },
+  { type: 'line', icon: 'horizontal_rule', label: 'Line' },
+  { type: 'freedraw', icon: 'draw', label: 'Draw' },
+  { type: 'text', icon: 'title', label: 'Text' },
+  { type: 'image', icon: 'image', label: 'Image' },
+  { type: 'eraser', icon: 'ink_eraser', label: 'Eraser' },
+];
 
 @Component({
   selector: 'app-task-canvas',
@@ -53,6 +75,22 @@ export class TaskCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Online users
   readonly onlineUsers = this.canvasSignalR.onlineUsers;
+
+  // Custom toolbar state
+  readonly tools: WritableSignal<CanvasTool[]> = signal(CANVAS_TOOLS);
+  readonly activeTool = signal<string>('selection');
+
+  /**
+   * Select a drawing tool and update Excalidraw
+   */
+  selectTool(toolType: string): void {
+    this.activeTool.set(toolType);
+
+    if (this.excalidrawApi) {
+      // Use Excalidraw's setActiveTool API
+      this.excalidrawApi.setActiveTool({ type: toolType });
+    }
+  }
 
   ngOnInit(): void {
     // Parse route params
@@ -122,12 +160,14 @@ export class TaskCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
         if (canvas) {
           this.canvas.set(canvas);
           this.lastSavedVersion.set(canvas.data?.version ?? 0);
+          // Set loading to false first so the container is rendered
+          this.loading.set(false);
+          // initializeExcalidraw handles waiting for container
           await this.initializeExcalidraw(canvas);
         } else {
           // No canvas exists, create one
           await this.createCanvas();
         }
-        this.loading.set(false);
       },
       error: (err) => {
         this.error.set(err.message || 'Failed to load canvas');
@@ -144,25 +184,90 @@ export class TaskCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
       next: async (canvas) => {
         this.canvas.set(canvas);
         this.lastSavedVersion.set(canvas.data?.version ?? 0);
+        // Set loading to false first so the container is rendered
+        this.loading.set(false);
+        // initializeExcalidraw handles waiting for container
         await this.initializeExcalidraw(canvas);
       },
       error: (err) => {
         this.error.set(err.message || 'Failed to create canvas');
+        this.loading.set(false);
       },
     });
   }
 
+  /**
+   * Waits for the excalidraw container to be available in the DOM.
+   * Uses requestAnimationFrame to ensure Angular change detection has completed.
+   * @returns Promise resolving to the container element
+   * @throws Error if container is not found within timeout
+   */
+  private waitForContainer(): Promise<HTMLDivElement> {
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+      const maxAttempts = 50; // ~800ms at 60fps
+
+      const checkContainer = (): void => {
+        attempts++;
+
+        // Check if container is available
+        if (this.excalidrawContainer?.nativeElement) {
+          resolve(this.excalidrawContainer.nativeElement);
+          return;
+        }
+
+        // Timeout after max attempts
+        if (attempts >= maxAttempts) {
+          reject(new Error('Excalidraw container not found after timeout'));
+          return;
+        }
+
+        // Schedule next check on next animation frame
+        requestAnimationFrame(checkContainer);
+      };
+
+      // Begin checking after next render cycle
+      requestAnimationFrame(checkContainer);
+    });
+  }
+
   private async initializeExcalidraw(canvas: CanvasDetailDto): Promise<void> {
+    // Wait for container with proper error handling
+    let container: HTMLDivElement;
+    try {
+      container = await this.waitForContainer();
+    } catch (containerError) {
+      console.error('Failed to initialize Excalidraw container:', containerError);
+      this.error.set('Failed to initialize canvas. Please refresh the page.');
+      return;
+    }
+
+    // Verify container dimensions (Excalidraw needs a sized container)
+    if (container.offsetWidth === 0 || container.offsetHeight === 0) {
+      console.warn('Excalidraw container has zero dimensions, waiting for layout...');
+      await new Promise(resolve => requestAnimationFrame(resolve));
+    }
+
     // Dynamic import of Excalidraw and React
-    const [{ Excalidraw }, React, ReactDOM] = await Promise.all([
-      import('@excalidraw/excalidraw'),
-      import('react'),
-      import('react-dom/client'),
-    ]);
+    let Excalidraw: unknown;
+    let React: typeof import('react');
+    let ReactDOM: typeof import('react-dom/client');
+
+    try {
+      [{ Excalidraw }, React, ReactDOM] = await Promise.all([
+        import('@excalidraw/excalidraw'),
+        import('react'),
+        import('react-dom/client'),
+      ]);
+    } catch (importError) {
+      console.error('Failed to load Excalidraw dependencies:', importError);
+      this.error.set('Failed to load canvas library. Please check your connection and refresh.');
+      return;
+    }
 
     // Parse initial data
-    let initialElements: any[] = [];
-    let initialAppState: any = {};
+    let initialElements: unknown[] = [];
+    let initialAppState: Record<string, unknown> = {};
 
     if (canvas.data?.elements) {
       try {
@@ -185,18 +290,21 @@ export class TaskCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     const userName = user?.fullName ?? 'Anonymous';
     await this.canvasSignalR.joinCanvas(canvas.id, userName);
 
-    // Mount Excalidraw in Angular zone
+    // Mount Excalidraw outside Angular zone for performance
     this.ngZone.runOutsideAngular(() => {
-      const container = this.excalidrawContainer.nativeElement;
       const root = ReactDOM.createRoot(container);
 
-      const excalidrawElement = React.createElement(Excalidraw, {
+      // Remove collaborators from saved appState as it can't be serialized properly
+      // Excalidraw expects collaborators to be a Map, not a plain object
+      const { collaborators: _ignored, ...cleanAppState } = initialAppState;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const excalidrawElement = React.createElement(Excalidraw as any, {
         initialData: {
           elements: initialElements,
           appState: {
-            ...initialAppState,
-            viewBackgroundColor: '#1a1a2e',
-            theme: 'dark',
+            ...cleanAppState,
+            collaborators: new Map(),
           },
         },
         onChange: (elements: readonly unknown[], appState: unknown) => {
@@ -210,12 +318,16 @@ export class TaskCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         UIOptions: {
           canvasActions: {
-            changeViewBackgroundColor: true,
+            changeViewBackgroundColor: false,
             clearCanvas: true,
             export: { saveFileToDisk: true },
-            loadScene: true,
+            loadScene: false,
             saveToActiveFile: false,
-            toggleTheme: true,
+            toggleTheme: false,
+          },
+          // Hide the default toolbar - we use our custom toolbar
+          tools: {
+            image: false, // We handle this in our toolbar
           },
         },
       });
@@ -270,12 +382,26 @@ export class TaskCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
+  /**
+   * Navigate back to the board or use browser history.
+   * Provides graceful fallback when boardId is unavailable.
+   */
   navigateBack(): void {
     const boardId = this.boardId();
-    if (boardId) {
+
+    // Prefer explicit board navigation if we have a valid boardId
+    if (boardId !== null && !Number.isNaN(boardId) && boardId > 0) {
       this.router.navigate(['/board', boardId]);
-    } else {
-      this.router.navigate(['/']);
+      return;
     }
+
+    // Fallback: use browser history if available
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    // Last resort: go to dashboard
+    this.router.navigate(['/']);
   }
 }

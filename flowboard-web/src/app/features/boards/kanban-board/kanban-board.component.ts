@@ -79,6 +79,10 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
   readonly isLoadingComments = signal(false);
   readonly isSavingComment = signal(false);
 
+  // Invite code state
+  readonly inviteCodeCopied = signal(false);
+  readonly showInviteCode = signal(false);
+
   // Board members state (for @mentions)
   readonly boardMembers = signal<UserSummaryDto[]>([]);
 
@@ -198,6 +202,21 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  // Invite Code Methods
+  toggleInviteCode(): void {
+    this.showInviteCode.update((v) => !v);
+  }
+
+  copyInviteCode(): void {
+    const currentBoard = this.board();
+    if (!currentBoard?.teamInviteCode) return;
+
+    navigator.clipboard.writeText(currentBoard.teamInviteCode).then(() => {
+      this.inviteCodeCopied.set(true);
+      setTimeout(() => this.inviteCodeCopied.set(false), 2000);
+    });
   }
 
   // Task Form Dialog Methods

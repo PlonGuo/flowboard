@@ -1,78 +1,106 @@
-<div class="canvas-container">
-  <!-- Header -->
-  <header class="canvas-header">
-    <div class="header-left">
-      <button
-        (click)="navigateBack()"
-        class="back-button"
-        title="Back to Board"
-      >
-        <span class="material-symbols-outlined">arrow_back</span>
-        <span class="back-text">Back to Board</span>
-      </button>
-    </div>
+<div class="canvas-page">
+  <!-- Grid background pattern -->
+  <div class="canvas-grid-bg"></div>
 
-    <div class="header-center">
-      @if (canvas(); as c) {
-        <h1 class="canvas-title">{{ c.name }}</h1>
-      }
-    </div>
+  <!-- Main canvas layout -->
+  <div class="canvas-layout">
+    <!-- Header -->
+    <header class="canvas-header">
+      <div class="header-left">
+        <button
+          (click)="navigateBack()"
+          class="back-button"
+          title="Back to Board"
+        >
+          <span class="material-symbols-outlined">arrow_back</span>
+          <span>Back to Board</span>
+        </button>
+      </div>
 
-    <div class="header-right">
-      <!-- Save indicator -->
-      @if (isSaving()) {
-        <span class="save-indicator saving">
-          <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-          </svg>
-          Saving...
-        </span>
-      } @else {
-        <span class="save-indicator saved">
-          <span class="material-symbols-outlined text-green-400">check_circle</span>
-          Saved
-        </span>
-      }
+      <div class="header-center">
+        @if (canvas(); as c) {
+          <h1 class="canvas-title">{{ c.name }}</h1>
+        }
+      </div>
 
-      <!-- Online users -->
-      @if (onlineUsers().length > 0) {
-        <div class="online-users">
-          @for (user of onlineUsers(); track user.connectionId) {
-            <div
-              class="user-avatar"
-              [style.background-color]="user.color"
-              [title]="user.userName"
-            >
-              {{ user.userName.charAt(0).toUpperCase() }}
-            </div>
-          }
+      <div class="header-right">
+        <!-- Save indicator -->
+        @if (isSaving()) {
+          <span class="save-indicator saving">
+            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            Saving...
+          </span>
+        } @else {
+          <span class="save-indicator saved">
+            <span class="material-symbols-outlined">check_circle</span>
+            Saved
+          </span>
+        }
+
+        <!-- Online users -->
+        @if (onlineUsers().length > 0) {
+          <div class="online-users">
+            @for (user of onlineUsers(); track user.connectionId) {
+              <div
+                class="user-avatar"
+                [style.background-color]="user.color"
+                [title]="user.userName"
+              >
+                {{ user.userName.charAt(0).toUpperCase() }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </header>
+
+    <!-- Canvas workspace - Excalidraw fills this -->
+    <div class="canvas-workspace">
+      <!-- Loading state -->
+      @if (loading()) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading canvas...</p>
         </div>
       }
-    </div>
-  </header>
 
-  <!-- Loading state -->
-  @if (loading()) {
-    <div class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>Loading canvas...</p>
-    </div>
-  }
+      <!-- Error state -->
+      @if (error(); as err) {
+        <div class="error-state">
+          <span class="material-symbols-outlined text-red-400 text-4xl">error</span>
+          <p>{{ err }}</p>
+          <button (click)="navigateBack()" class="back-button-error">
+            Go Back
+          </button>
+        </div>
+      }
 
-  <!-- Error state -->
-  @if (error(); as err) {
-    <div class="error-state">
-      <span class="material-symbols-outlined text-red-400 text-4xl">error</span>
-      <p>{{ err }}</p>
-      <button (click)="navigateBack()" class="back-button-error">
-        Go Back
-      </button>
-    </div>
-  }
+      <!-- Excalidraw container -->
+      @if (!loading() && !error()) {
+        <div #excalidrawContainer class="excalidraw-wrapper"></div>
 
-  <!-- Excalidraw container -->
-  @if (!loading() && !error()) {
-    <div #excalidrawContainer class="excalidraw-container"></div>
-  }
+        <!-- Custom Toolbar - Left side vertical column -->
+        <aside class="custom-toolbar">
+          <div class="toolbar-container">
+            @for (tool of tools(); track tool.type) {
+              <button
+                [title]="tool.label"
+                (click)="selectTool(tool.type)"
+                [class.active]="activeTool() === tool.type"
+                class="tool-button"
+              >
+                <span class="material-symbols-outlined">{{ tool.icon }}</span>
+              </button>
+              @if (tool.type === 'selection') {
+                <div class="toolbar-divider"></div>
+              }
+            }
+          </div>
+        </aside>
+      }
+    </div>
+  </div>
 </div>
