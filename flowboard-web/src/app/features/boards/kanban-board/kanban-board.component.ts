@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit, OnDestroy, computed, HostListener, ElementRef } from '@angular/core';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject, takeUntil, switchMap, filter } from 'rxjs';
 import { CdkDragDrop, CdkDrag, CdkDropList, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { BoardService } from '../../../core/services/board.service';
@@ -29,6 +29,7 @@ import { NotificationBellComponent } from '../../../shared/components/notificati
 })
 export class KanbanBoardComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly boardService = inject(BoardService);
   private readonly taskService = inject(TaskService);
   private readonly commentService = inject(CommentService);
@@ -244,6 +245,13 @@ export class KanbanBoardComponent implements OnInit, OnDestroy {
     this.showTaskForm.set(false);
     this.taskFormColumnId.set(null);
     this.editingTask.set(null);
+  }
+
+  openTaskCanvas(task: TaskApiDto): void {
+    const currentBoard = this.board();
+    if (currentBoard) {
+      this.router.navigate(['/board', currentBoard.id, 'task', task.id, 'canvas']);
+    }
   }
 
   onTaskSaved(task: TaskItemDto): void {

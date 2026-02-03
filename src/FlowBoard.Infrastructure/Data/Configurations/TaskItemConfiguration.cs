@@ -24,8 +24,10 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        // Configure RowVersion as concurrency token
+        // Note: For PostgreSQL, we manually set this in handlers since it doesn't auto-generate like SQL Server
         builder.Property(t => t.RowVersion)
-            .IsRowVersion();
+            .IsConcurrencyToken();
 
         builder.HasOne(t => t.Column)
             .WithMany(c => c.Tasks)

@@ -9,6 +9,7 @@ public record CanvasDto
     public string Name { get; init; } = string.Empty;
     public string? Description { get; init; }
     public int? BoardId { get; init; }
+    public int? TaskId { get; init; }
     public int? TeamId { get; init; }
     public UserSummaryDto CreatedBy { get; init; } = null!;
     public DateTime CreatedAt { get; init; }
@@ -24,10 +25,21 @@ public record CanvasDetailDto
     public string Name { get; init; } = string.Empty;
     public string? Description { get; init; }
     public int? BoardId { get; init; }
+    public int? TaskId { get; init; }
     public int? TeamId { get; init; }
     public UserSummaryDto CreatedBy { get; init; } = null!;
     public CanvasDataDto? Data { get; init; }
     public DateTime CreatedAt { get; init; }
+    public DateTime UpdatedAt { get; init; }
+}
+
+/// <summary>
+/// Response after saving canvas data.
+/// </summary>
+public record SaveCanvasDataResponse
+{
+    public int CanvasId { get; init; }
+    public int Version { get; init; }
     public DateTime UpdatedAt { get; init; }
 }
 

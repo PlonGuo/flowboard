@@ -24,6 +24,11 @@ public class CanvasConfiguration : IEntityTypeConfiguration<Canvas>
             .HasForeignKey(c => c.BoardId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        builder.HasOne(c => c.Task)
+            .WithOne(t => t.Canvas)
+            .HasForeignKey<Canvas>(c => c.TaskId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasOne(c => c.Team)
             .WithMany(t => t.Canvases)
             .HasForeignKey(c => c.TeamId)
@@ -36,5 +41,8 @@ public class CanvasConfiguration : IEntityTypeConfiguration<Canvas>
 
         builder.HasIndex(c => c.TeamId);
         builder.HasIndex(c => c.BoardId);
+        builder.HasIndex(c => c.TaskId)
+            .IsUnique()
+            .HasFilter("\"TaskId\" IS NOT NULL");
     }
 }

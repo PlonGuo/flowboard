@@ -1,0 +1,78 @@
+<div class="canvas-container">
+  <!-- Header -->
+  <header class="canvas-header">
+    <div class="header-left">
+      <button
+        (click)="navigateBack()"
+        class="back-button"
+        title="Back to Board"
+      >
+        <span class="material-symbols-outlined">arrow_back</span>
+        <span class="back-text">Back to Board</span>
+      </button>
+    </div>
+
+    <div class="header-center">
+      @if (canvas(); as c) {
+        <h1 class="canvas-title">{{ c.name }}</h1>
+      }
+    </div>
+
+    <div class="header-right">
+      <!-- Save indicator -->
+      @if (isSaving()) {
+        <span class="save-indicator saving">
+          <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          Saving...
+        </span>
+      } @else {
+        <span class="save-indicator saved">
+          <span class="material-symbols-outlined text-green-400">check_circle</span>
+          Saved
+        </span>
+      }
+
+      <!-- Online users -->
+      @if (onlineUsers().length > 0) {
+        <div class="online-users">
+          @for (user of onlineUsers(); track user.connectionId) {
+            <div
+              class="user-avatar"
+              [style.background-color]="user.color"
+              [title]="user.userName"
+            >
+              {{ user.userName.charAt(0).toUpperCase() }}
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </header>
+
+  <!-- Loading state -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>Loading canvas...</p>
+    </div>
+  }
+
+  <!-- Error state -->
+  @if (error(); as err) {
+    <div class="error-state">
+      <span class="material-symbols-outlined text-red-400 text-4xl">error</span>
+      <p>{{ err }}</p>
+      <button (click)="navigateBack()" class="back-button-error">
+        Go Back
+      </button>
+    </div>
+  }
+
+  <!-- Excalidraw container -->
+  @if (!loading() && !error()) {
+    <div #excalidrawContainer class="excalidraw-container"></div>
+  }
+</div>

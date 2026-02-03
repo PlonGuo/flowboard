@@ -21,7 +21,7 @@ public class TaskItem
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    [Timestamp]
+    // RowVersion for optimistic concurrency (manually set for PostgreSQL)
     public byte[] RowVersion { get; set; } = null!;
 
     // Navigation properties
@@ -30,6 +30,7 @@ public class TaskItem
     public User CreatedBy { get; set; } = null!;
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+    public Canvas? Canvas { get; set; }
 
     /// <summary>
     /// Move task to a new column and position.

@@ -273,6 +273,13 @@
           <span class="material-symbols-outlined text-white text-xl">edit</span>
         </button>
         <button
+          (click)="openTaskCanvas(task)"
+          class="size-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center hover:bg-primary/30 transition-colors"
+          title="Open Canvas"
+        >
+          <span class="material-symbols-outlined text-primary text-xl">draw</span>
+        </button>
+        <button
           (click)="confirmDeleteTask()"
           class="size-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center hover:bg-red-500/20 transition-colors"
           title="Delete task"

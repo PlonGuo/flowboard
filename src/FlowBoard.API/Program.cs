@@ -5,6 +5,7 @@ using FlowBoard.Application;
 using FlowBoard.Core.Interfaces;
 using FlowBoard.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +34,7 @@ builder.Services.AddSignalR();
 // Register SignalR notification services for real-time updates
 builder.Services.AddScoped<IBoardNotificationService, SignalRBoardNotificationService>();
 builder.Services.AddScoped<IUserNotificationService, SignalRUserNotificationService>();
+builder.Services.AddScoped<ICanvasNotificationService, SignalRCanvasNotificationService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -87,6 +89,39 @@ builder.Services.AddAuthorization();
 builder.Services.AddMemoryCache();
 
 var app = builder.Build();
+
+// Apply pending database schema changes (one-time migration fix)
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<FlowBoard.Infrastructure.Data.FlowBoardDbContext>();
+    try
+    {
+        // Add TaskId column to Canvases if it doesn't exist
+        var connection = dbContext.Database.GetDbConnection();
+        await connection.OpenAsync();
+        using var command = connection.CreateCommand();
+        command.CommandText = @"
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_name = 'Canvases' AND column_name = 'TaskId'
+                ) THEN
+                    ALTER TABLE ""Canvases"" ADD COLUMN ""TaskId"" INTEGER NULL;
+                    CREATE UNIQUE INDEX ""IX_Canvases_TaskId"" ON ""Canvases"" (""TaskId"") WHERE ""TaskId"" IS NOT NULL;
+                    ALTER TABLE ""Canvases"" ADD CONSTRAINT ""FK_Canvases_Tasks_TaskId""
+                        FOREIGN KEY (""TaskId"") REFERENCES ""Tasks""(""Id"") ON DELETE SET NULL;
+                END IF;
+            END $$;
+        ";
+        await command.ExecuteNonQueryAsync();
+        Log.Information("Database schema verified/updated for Canvas TaskId");
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Failed to apply Canvas TaskId migration (may already exist)");
+    }
+}
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

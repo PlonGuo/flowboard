@@ -169,6 +169,9 @@ namespace FlowBoard.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int?>("TaskId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("TeamId")
                         .HasColumnType("integer");
 
@@ -180,6 +183,10 @@ namespace FlowBoard.Infrastructure.Data.Migrations
                     b.HasIndex("BoardId");
 
                     b.HasIndex("CreatedById");
+
+                    b.HasIndex("TaskId")
+                        .IsUnique()
+                        .HasFilter("\"TaskId\" IS NOT NULL");
 
                     b.HasIndex("TeamId");
 
@@ -433,7 +440,6 @@ namespace FlowBoard.Infrastructure.Data.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.Property<string>("Title")
@@ -645,6 +651,11 @@ namespace FlowBoard.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("FlowBoard.Core.Entities.TaskItem", "Task")
+                        .WithOne("Canvas")
+                        .HasForeignKey("FlowBoard.Core.Entities.Canvas", "TaskId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("FlowBoard.Core.Entities.Team", "Team")
                         .WithMany("Canvases")
                         .HasForeignKey("TeamId")
@@ -654,6 +665,8 @@ namespace FlowBoard.Infrastructure.Data.Migrations
                     b.Navigation("Board");
 
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("Task");
 
                     b.Navigation("Team");
                 });
@@ -834,6 +847,8 @@ namespace FlowBoard.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("FlowBoard.Core.Entities.TaskItem", b =>
                 {
+                    b.Navigation("Canvas");
+
                     b.Navigation("Comments");
 
                     b.Navigation("Notifications");

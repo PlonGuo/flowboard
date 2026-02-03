@@ -31,6 +31,13 @@ export const routes: Routes = [
     title: 'FlowBoard - Kanban Board',
   },
   {
+    path: 'board/:boardId/task/:taskId/canvas',
+    loadComponent: () =>
+      import('./features/canvas/task-canvas/task-canvas.component').then((m) => m.TaskCanvasComponent),
+    canActivate: [authGuard],
+    title: 'FlowBoard - Task Canvas',
+  },
+  {
     path: 'whiteboard/:id',
     loadComponent: () =>
       import('./features/canvas/whiteboard/whiteboard.component').then((m) => m.WhiteboardComponent),
