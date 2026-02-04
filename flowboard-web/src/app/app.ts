@@ -15,7 +15,8 @@ import { UiService } from './core/services/ui.service';
         <app-ai-chat (closeChat)="uiService.toggleAiChat()" />
       }
 
-      <div class="fixed bottom-8 right-8 z-[100]">
+      <!-- AI Chat button hidden for now -->
+      <div class="fixed bottom-8 right-8 z-[100] hidden">
         <button
           (click)="uiService.toggleAiChat()"
           class="size-14 rounded-full bg-primary flex items-center justify-center text-white shadow-2xl shadow-primary/40 hover:scale-110 active:scale-95 transition-all"
