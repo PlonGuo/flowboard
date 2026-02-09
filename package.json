@@ -14,7 +14,7 @@
     "test:front:coverage": "cd flowboard-web && pnpm test:coverage",
     "test:e2e": "cd flowboard-web && pnpm cypress:run",
     "dev:back": "cd src/FlowBoard.API && dotnet watch run",
-    "dev:front": "cd flowboard-web && pnpm dev",
+    "dev:front": "cd flowboard-web && pnpm start",
     "build:back": "cd src && dotnet build",
     "build:front": "cd flowboard-web && pnpm build",
     "lint:front": "cd flowboard-web && pnpm lint",

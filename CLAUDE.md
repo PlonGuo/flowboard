@@ -27,6 +27,30 @@ FlowBoard is a real-time collaborative kanban board with AI assistant and intera
 
 ---
 
+## 🚀 Startup Commands
+
+**Start both frontend and backend from the project root:**
+
+```bash
+# Start backend (.NET) - with hot reload
+pnpm dev:back
+
+# Start frontend (Angular) - default at http://localhost:4200
+pnpm dev:front
+```
+
+**Or run them individually:**
+
+```bash
+# Backend
+cd src/FlowBoard.API && dotnet watch run
+
+# Frontend
+cd flowboard-web && pnpm start
+```
+
+---
+
 ## 🚨 CRITICAL RULES
 
 ### 1. TypeScript Type Safety ⚠️ MANDATORY
