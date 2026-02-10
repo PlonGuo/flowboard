@@ -277,12 +277,22 @@ dotnet ef database update \
 
 ### Option A: Deploy via GitHub Actions (Recommended)
 
-1. Go to Azure Portal > App Service > **Deployment Center**
-2. Download the **Publish Profile**
-3. In your GitHub repository, go to **Settings > Secrets > Actions**
-4. Add secret: `AZURE_WEBAPP_PUBLISH_PROFILE` with the publish profile content
-5. Update `AZURE_WEBAPP_NAME` in `.github/workflows/deploy-backend.yml`
-6. Push to `main` branch to trigger deployment
+1. **Download Publish Profile from Azure Portal:**
+   - Open [Azure Portal](https://portal.azure.com) and navigate to your App Service
+   - In the left sidebar, click **Overview**
+   - Click the **"Download publish profile"** button at the top toolbar (or go to **Deployment Center** > **Manage publish profile**)
+   - A `.PublishSettings` file will download - open it in a text editor and **copy all of its contents**
+
+2. **Add Publish Profile to GitHub Secrets:**
+   - Go to your GitHub repository: `https://github.com/<your-username>/flowboard`
+   - Click **Settings** tab > **Secrets and variables** > **Actions**
+   - Click **"New repository secret"**
+   - Name: `AZURE_WEBAPP_PUBLISH_PROFILE`
+   - Value: paste the **entire content** of the `.PublishSettings` file
+   - Click **"Add secret"**
+
+3. Update `AZURE_WEBAPP_NAME` in `.github/workflows/deploy-backend.yml` to your App Service name
+4. Push to `main` branch to trigger deployment
 
 ### Option B: Deploy via Azure CLI
 
@@ -323,8 +333,19 @@ If you linked the Static Web App to GitHub in Step 2.7, it will auto-deploy on p
 
 ### Option B: Manual deploy via GitHub Actions
 
-1. In your GitHub repository, go to **Settings > Secrets > Actions**
-2. Add secret: `AZURE_STATIC_WEB_APPS_API_TOKEN` (get from Azure Portal > Static Web App > Manage deployment token)
+1. **Get Static Web App deployment token from Azure Portal:**
+   - Open [Azure Portal](https://portal.azure.com) and navigate to your Static Web App
+   - In the left sidebar, click **Overview**
+   - Click **"Manage deployment token"** at the top toolbar
+   - Copy the token value
+
+2. **Add token to GitHub Secrets:**
+   - Go to your GitHub repository Settings > **Secrets and variables** > **Actions**
+   - Click **"New repository secret"**
+   - Name: `AZURE_STATIC_WEB_APPS_API_TOKEN`
+   - Value: paste the deployment token
+   - Click **"Add secret"**
+
 3. Push to `main` to trigger `.github/workflows/deploy-frontend.yml`
 
 ---
@@ -455,6 +476,82 @@ builder.Services.AddSignalR().AddAzureSignalR();
 3. **Stop App Service** when not in use during development
 4. **Use Azure Student Credits** ($100/year) if eligible
 5. **Set up budget alerts** in Azure Cost Management
+
+---
+
+## Appendix: Azure Portal (Web UI) Operations Guide
+
+While all resource creation can be done via CLI, certain management tasks are easier through the [Azure Portal](https://portal.azure.com). Below is a guide for common Portal operations.
+
+### A.1 Download App Service Publish Profile
+
+1. Log in to [portal.azure.com](https://portal.azure.com)
+2. Search for your App Service name (e.g., `flowboard-api-xxx`) in the top search bar
+3. Click **Overview** in the left sidebar
+4. Click **"Download publish profile"** in the top toolbar
+5. Save the `.PublishSettings` file - this is used for GitHub Actions deployment
+
+### A.2 Get Static Web App Deployment Token
+
+1. Search for your Static Web App in the Portal search bar
+2. Click **Overview** in the left sidebar
+3. Click **"Manage deployment token"** in the top toolbar
+4. Click the copy icon to copy the token
+5. Use this token as the `AZURE_STATIC_WEB_APPS_API_TOKEN` GitHub secret
+
+### A.3 View Application Insights Monitoring
+
+1. Search for `flowboard-insights` in the Portal search bar
+2. **Overview** page shows key metrics: server response time, requests, failed requests
+3. Click **Live Metrics** in the left sidebar for real-time monitoring
+4. Click **Failures** to investigate errors (see stack traces, exception details)
+5. Click **Performance** to find slow API endpoints
+6. Click **Logs** to run custom KQL queries, e.g.:
+   ```kusto
+   requests
+   | where resultCode >= 500
+   | order by timestamp desc
+   | take 20
+   ```
+
+### A.4 View App Service Logs
+
+1. Navigate to your App Service in the Portal
+2. In the left sidebar, under **Monitoring**, click **Log stream**
+3. This shows real-time stdout/stderr logs from your application
+4. For historical logs: click **App Service logs** > enable **Application Logging (Filesystem)** > set level to **Information**
+5. Then go to **Advanced Tools (Kudu)** > **Log stream** for more detailed output
+
+### A.5 Configure Custom Domain
+
+1. Navigate to your App Service or Static Web App
+2. In the left sidebar, click **Custom domains**
+3. Click **"Add custom domain"**
+4. Enter your domain name (e.g., `api.flowboard.com`)
+5. Follow the DNS validation steps (add CNAME or TXT records at your domain registrar)
+6. After validation, Azure will auto-provision a free SSL certificate
+
+### A.6 Manage Key Vault Secrets
+
+1. Search for your Key Vault in the Portal search bar
+2. Click **Secrets** in the left sidebar
+3. Click a secret name to view its versions
+4. Click **"+ Generate/Import"** to add a new secret
+5. To update: click the secret > **New Version** > enter new value
+
+### A.7 Scale Up / Scale Out App Service
+
+1. Navigate to your App Service
+2. **Scale up (vertical)**: left sidebar > **Scale up (App Service plan)** > select a higher SKU tier
+3. **Scale out (horizontal)**: left sidebar > **Scale out (App Service plan)** > set instance count or configure auto-scaling rules based on CPU/memory metrics
+
+### A.8 Database Management
+
+1. Search for your PostgreSQL server in the Portal
+2. Click **Databases** to see all databases on the server
+3. Click **Connection security** to manage firewall rules
+4. Click **Server parameters** to tune PostgreSQL configuration
+5. Click **Backups** to configure backup retention (default: 7 days)
 
 ---
 
