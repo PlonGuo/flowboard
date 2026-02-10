@@ -1,3 +1,4 @@
+using Azure.Identity;
 using FlowBoard.API.Hubs;
 using FlowBoard.API.Middleware;
 using FlowBoard.API.Services;
@@ -5,10 +6,22 @@ using FlowBoard.Application;
 using FlowBoard.Core.Interfaces;
 using FlowBoard.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Azure Key Vault integration (production only)
+if (!builder.Environment.IsDevelopment())
+{
+    var keyVaultName = builder.Configuration["KeyVault:Name"];
+    if (!string.IsNullOrEmpty(keyVaultName))
+    {
+        var keyVaultUri = new Uri($"https://{keyVaultName}.vault.azure.net/");
+        builder.Configuration.AddAzureKeyVault(keyVaultUri, new DefaultAzureCredential());
+    }
+}
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -18,6 +31,12 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+
+// Azure Application Insights
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddApplicationInsightsTelemetry();
+}
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -62,7 +81,8 @@ builder.Services.AddAuthentication()
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
-                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "DefaultSecretKeyForDevelopment123!"))
+                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]
+                    ?? throw new InvalidOperationException("JWT Key is not configured. Set 'Jwt:Key' in appsettings or Azure Key Vault.")))
         };
 
         // Allow SignalR to receive JWT token from query string (WebSocket connections can't send headers)
@@ -87,6 +107,13 @@ builder.Services.AddAuthorization();
 
 // Configure Memory Cache
 builder.Services.AddMemoryCache();
+
+// Health checks with database connectivity
+builder.Services.AddHealthChecks()
+    .AddNpgSql(
+        builder.Configuration.GetConnectionString("DefaultConnection")!,
+        name: "postgresql",
+        tags: ["db", "ready"]);
 
 var app = builder.Build();
 
@@ -146,16 +173,29 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseSerilogRequestLogging();
 
+// Serve Angular SPA in production (when deployed together)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseDefaultFiles();
+    app.UseStaticFiles();
+}
+
 app.MapControllers();
 
 // Map SignalR Hubs
 app.MapHub<BoardHub>("/hubs/board");
 app.MapHub<CanvasHub>("/hubs/canvas");
 
-// Health check endpoint
-app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }))
-    .WithName("HealthCheck")
-    .WithOpenApi();
+// Health check endpoints
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = _ => false // Liveness: always returns healthy if app is running
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready") // Readiness: checks database connectivity
+});
 
 app.Run();
 

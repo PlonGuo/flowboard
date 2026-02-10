@@ -12,7 +12,7 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Subject, takeUntil, debounceTime } from 'rxjs';
+import { Subject, takeUntil, debounceTime, throttleTime } from 'rxjs';
 import { CanvasService } from '../../../core/services/canvas.service';
 import { CanvasSignalRService } from '../../../core/services/canvas-signalr.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -72,6 +72,11 @@ export class TaskCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
   // Excalidraw instance
   private excalidrawApi: any = null;
   private saveSubject = new Subject<{ elements: string; appState: string | null }>();
+  private broadcastSubject = new Subject<{ canvasId: number; elements: string; appState: string }>();
+  // Counter of pending remote updates — each updateScene() increments,
+  // each onChange consumed in handleExcalidrawChange decrements.
+  // This avoids timing issues with setTimeout/RAF vs React's render cycle.
+  private pendingRemoteUpdates = 0;
 
   // Online users
   readonly onlineUsers = this.canvasSignalR.onlineUsers;
@@ -105,17 +110,38 @@ export class TaskCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(takeUntil(this.destroy$), debounceTime(5000))
       .subscribe((data) => this.saveCanvas(data.elements, data.appState));
 
+    // Throttle outgoing broadcasts to max ~10/sec to avoid flooding SignalR
+    this.broadcastSubject
+      .pipe(takeUntil(this.destroy$), throttleTime(100))
+      .subscribe(({ canvasId, elements, appState }) => {
+        console.log('[Canvas] Broadcasting scene update to others');
+        this.canvasSignalR.broadcastSceneUpdate(canvasId, elements, appState);
+      });
+
     // Subscribe to remote scene updates
     this.canvasSignalR.onSceneUpdated$
       .pipe(takeUntil(this.destroy$))
       .subscribe((event) => {
+        console.log('[Canvas] Received remote scene update from user:', event.userId);
         if (this.excalidrawApi) {
           this.ngZone.run(() => {
             try {
+              // Increment counter — handleExcalidrawChange will consume it
+              // when React fires onChange after this updateScene call
+              this.pendingRemoteUpdates++;
               const elements = JSON.parse(event.elements);
               this.excalidrawApi.updateScene({ elements });
+              // Safety: if React never fires onChange (e.g. identical scene),
+              // decrement after 2s so the counter doesn't stay stuck
+              setTimeout(() => {
+                if (this.pendingRemoteUpdates > 0) {
+                  this.pendingRemoteUpdates--;
+                  console.log('[Canvas] Safety timeout: decremented pending counter');
+                }
+              }, 2000);
             } catch (e) {
               console.error('Failed to apply remote scene update:', e);
+              if (this.pendingRemoteUpdates > 0) this.pendingRemoteUpdates--;
             }
           });
         }
@@ -343,11 +369,17 @@ export class TaskCanvasComponent implements OnInit, AfterViewInit, OnDestroy {
     const elementsJson = JSON.stringify(elements);
     const appStateJson = JSON.stringify(appState);
 
-    // Queue for auto-save
+    // Queue for auto-save (always save, even for remote updates)
     this.saveSubject.next({ elements: elementsJson, appState: appStateJson });
 
-    // Broadcast to other users (throttled by SignalR)
-    this.canvasSignalR.broadcastSceneUpdate(canvas.id, elementsJson, appStateJson);
+    // Only broadcast local changes — if there are pending remote updates,
+    // this onChange is an echo from updateScene, so consume the counter and skip
+    if (this.pendingRemoteUpdates > 0) {
+      this.pendingRemoteUpdates--;
+      console.log('[Canvas] Skipping broadcast — consumed remote update echo, remaining:', this.pendingRemoteUpdates);
+      return;
+    }
+    this.broadcastSubject.next({ canvasId: canvas.id, elements: elementsJson, appState: appStateJson });
   }
 
   private handlePointerUpdate(payload: unknown): void {

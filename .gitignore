@@ -423,7 +423,6 @@ local.env
 # ================================
 
 # Study guides (personal notes, not project docs)
-/docs/
 DOTNET_STUDY_GUIDE.md
 *_STUDY_GUIDE.md
 *_INTERVIEW_PREP.md
@@ -432,3 +431,18 @@ bin/
 obj/
 *.dll
 /design-reference/
+
+# Chinese deployment docs (keep locally only)
+docs/AZURE_DEPLOYMENT_CN.md
+docs/LEARNING_GUIDE.md
+
+# ================================
+# Azure / Docker
+# ================================
+
+# Azure publish profiles
+*.pubxml
+*.publishsettings
+
+# Docker
+docker-compose.override.yml
