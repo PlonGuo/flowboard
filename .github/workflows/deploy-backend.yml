@@ -10,7 +10,7 @@ on:
 
 env:
   DOTNET_VERSION: '10.0.x'
-  AZURE_WEBAPP_NAME: '' # Set this to your Azure App Service name
+  AZURE_WEBAPP_NAME: 'flowboard-api-0209'
 
 jobs:
   build:

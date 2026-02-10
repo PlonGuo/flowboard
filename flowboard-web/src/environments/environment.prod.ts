@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: '/api',
-  signalRUrl: '/hubs',
+  apiUrl: 'https://flowboard-api-0209.azurewebsites.net/api',
+  signalRUrl: 'https://flowboard-api-0209.azurewebsites.net/hubs',
 };

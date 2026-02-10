@@ -66,7 +66,7 @@ az account set --subscription "<subscription-id>"
 ```bash
 az group create \
   --name rg-flowboard \
-  --location eastasia
+  --location westus3
 ```
 
 ### 2.2 Azure Database for PostgreSQL
@@ -76,7 +76,7 @@ az group create \
 az postgres flexible-server create \
   --resource-group rg-flowboard \
   --name flowboard-db-<unique-suffix> \
-  --location eastasia \
+  --location westus3 \
   --admin-user flowadmin \
   --admin-password "<STRONG_PASSWORD>" \
   --sku-name Standard_B1ms \
@@ -108,7 +108,14 @@ az postgres flexible-server firewall-rule create \
 az keyvault create \
   --name flowboard-kv-<unique-suffix> \
   --resource-group rg-flowboard \
-  --location eastasia
+  --location westus3
+
+# Grant yourself permission to manage secrets (Key Vault uses RBAC by default)
+az role assignment create \
+  --role "Key Vault Secrets Officer" \
+  --assignee $(az ad signed-in-user show --query id -o tsv) \
+  --scope $(az keyvault show --name flowboard-kv-<unique-suffix> --query id -o tsv)
+# Wait 1-2 minutes for the role assignment to propagate
 
 # Store the JWT secret key (generate a strong 64+ character key)
 az keyvault secret set \
@@ -132,7 +139,7 @@ az keyvault secret set \
 az appservice plan create \
   --name plan-flowboard \
   --resource-group rg-flowboard \
-  --location eastasia \
+  --location westus3 \
   --sku B1 \
   --is-linux
 
@@ -164,11 +171,11 @@ PRINCIPAL_ID=$(az webapp identity show \
   --name flowboard-api-<unique-suffix> \
   --query principalId -o tsv)
 
-# Grant Key Vault access
-az keyvault set-policy \
-  --name flowboard-kv-<unique-suffix> \
-  --object-id $PRINCIPAL_ID \
-  --secret-permissions get list
+# Grant Key Vault read access via RBAC
+az role assignment create \
+  --role "Key Vault Secrets User" \
+  --assignee $PRINCIPAL_ID \
+  --scope $(az keyvault show --name flowboard-kv-<unique-suffix> --query id -o tsv)
 ```
 
 ### 2.6 Configure App Service Settings
@@ -190,10 +197,11 @@ az webapp config appsettings set \
 
 ```bash
 # Create Static Web App (linked to GitHub for auto-deploy)
+# Note: Static Web Apps only supports limited regions (westus2, centralus, eastus2, westeurope, eastasia)
 az staticwebapp create \
   --name flowboard-web-<unique-suffix> \
   --resource-group rg-flowboard \
-  --location eastasia \
+  --location eastus2 \
   --source https://github.com/<your-username>/flowboard \
   --branch main \
   --app-location "/flowboard-web" \
@@ -217,7 +225,7 @@ az webapp config appsettings set \
 # Create Application Insights
 az monitor app-insights component create \
   --app flowboard-insights \
-  --location eastasia \
+  --location westus3 \
   --resource-group rg-flowboard \
   --application-type web
 
