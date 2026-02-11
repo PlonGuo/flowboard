@@ -446,3 +446,6 @@ docs/LEARNING_GUIDE.md
 
 # Docker
 docker-compose.override.yml
+
+#log
+log.md
